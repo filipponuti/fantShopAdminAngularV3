@@ -7,6 +7,26 @@ export const MENU: MenuItem[] = [
     isTitle: true
   },
   {
+    id: 10001,
+    label: 'MENUITEMS.FANT.HOME',
+    icon: 'ri-home-4-line',
+    link: '/fant-home'
+  },
+  {
+    id: 10002,
+    label: 'MENUITEMS.FANT.SHOP',
+    icon: 'ri-store-2-line',
+    isCollapsed: true,
+    subItems: [
+      {
+        id: 10003,
+        label: 'MENUITEMS.FANT.CATEGORIES',
+        link: '/fant-categorie',
+        parentId: 10002
+      }
+    ]
+  },
+  {
     id: 2,
     label: 'MENUITEMS.DASHBOARD.TEXT',
     icon: 'ri-dashboard-2-line',
@@ -27,7 +47,7 @@ export const MENU: MenuItem[] = [
       {
         id: 5,
         label: 'MENUITEMS.DASHBOARD.LIST.ECOMMERCE',
-        link: '/',
+        link: '/dashboard-ecommerce',
         parentId: 2
       },
       {

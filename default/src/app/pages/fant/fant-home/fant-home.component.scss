@@ -1,0 +1,14 @@
+.home-placeholder {
+  min-height: 320px;
+}
+
+.quick-action {
+  border: 1px solid var(--vz-border-color);
+  transition: background-color .2s ease, transform .2s ease;
+}
+
+.quick-action:hover {
+  background: var(--vz-light);
+  transform: translateY(-1px);
+}
+

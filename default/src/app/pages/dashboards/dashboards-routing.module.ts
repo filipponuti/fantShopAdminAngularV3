@@ -9,8 +9,13 @@ import { ProjectsComponent } from "./projects/projects.component";
 import { NftComponent } from "./nft/nft.component";
 import { JobComponent } from './job/job.component';
 import { DashboardBlogComponent } from './dashboard-blog/dashboard-blog.component';
+import { DashboardComponent } from './dashboard/dashboard.component';
 
 const routes: Routes = [
+  {
+    path: "dashboard-ecommerce",
+    component: DashboardComponent
+  },
   {
     path: "analytics",
     component: AnalyticsComponent

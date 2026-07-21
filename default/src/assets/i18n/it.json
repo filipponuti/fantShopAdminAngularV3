@@ -8,6 +8,11 @@
     "MENU": {
       "TEXT": "MENÙ"
     },
+    "FANT": {
+      "HOME": "Home",
+      "SHOP": "Shop",
+      "CATEGORIES": "Categorie"
+    },
     "DASHBOARD": {
       "TEXT": "Cruscotti",
       "BADGE": "Nuovo",

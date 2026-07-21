@@ -1,0 +1,58 @@
+<app-breadcrumbs title="Home" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
+
+<div class="row">
+  @for (stat of stats; track stat.label) {
+    <div class="col-xl-3 col-md-6">
+      <div class="card card-animate">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <p class="text-uppercase fw-medium text-muted mb-0">{{ stat.label }}</p>
+            </div>
+            <div class="flex-shrink-0 avatar-sm">
+              <span class="avatar-title rounded-circle fs-3" [ngClass]="'bg-' + stat.color + '-subtle text-' + stat.color">
+                <i [class]="stat.icon"></i>
+              </span>
+            </div>
+          </div>
+          <div class="d-flex align-items-end justify-content-between mt-4">
+            <div>
+              <h4 class="fs-22 fw-semibold mb-1">{{ stat.value }}</h4>
+              <span class="text-muted">{{ stat.note }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<div class="row">
+  <div class="col-xl-8">
+    <div class="card card-height-100">
+      <div class="card-header align-items-center d-flex">
+        <h4 class="card-title mb-0 flex-grow-1">Andamento del negozio</h4>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center home-placeholder">
+        <div class="text-center text-muted">
+          <i class="ri-line-chart-line display-5"></i>
+          <p class="mt-3 mb-0">La dashboard verrà popolata con i dati WooCommerce nelle prossime attività.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="card card-height-100">
+      <div class="card-header">
+        <h4 class="card-title mb-0">Azioni rapide</h4>
+      </div>
+      <div class="card-body">
+        <a routerLink="/fant-categorie" class="quick-action d-flex align-items-center p-3 rounded mb-2">
+          <span class="avatar-sm me-3"><span class="avatar-title rounded bg-primary-subtle text-primary"><i class="ri-node-tree"></i></span></span>
+          <span><strong class="d-block text-body">Categorie</strong><small class="text-muted">Gestisci l’albero del catalogo</small></span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,13 +1,14 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-// Component pages
-import { DashboardComponent } from "./dashboards/dashboard/dashboard.component";
-
 const routes: Routes = [
     {
         path: "",
-        component: DashboardComponent
+        pathMatch: 'full',
+        redirectTo: 'fant-home'
+    },
+    {
+      path: '', loadChildren: () => import('./fant/fant.module').then(m => m.FantModule)
     },
     {
       path: '', loadChildren: () => import('./dashboards/dashboards.module').then(m => m.DashboardsModule)

@@ -8,6 +8,11 @@
     "MENU": {
       "TEXT": "MENU"
     },
+    "FANT": {
+      "HOME": "Home",
+      "SHOP": "Shop",
+      "CATEGORIES": "Categories"
+    },
     "DASHBOARD": {
       "TEXT": "Dashboards",
       "BADGE": "New",

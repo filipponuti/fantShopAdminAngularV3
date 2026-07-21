@@ -1,0 +1,96 @@
+.category-list {
+  min-height: 16px;
+}
+
+.category-list-child {
+  margin-left: 30px;
+  padding-left: 14px;
+  border-left: 1px dashed var(--vz-border-color);
+}
+
+.category-row {
+  min-height: 50px;
+  margin-bottom: 8px;
+  padding: 9px 12px;
+  border: 1px solid rgba(var(--vz-primary-rgb), .3);
+  border-left: 4px solid rgba(var(--vz-primary-rgb), .7);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(var(--vz-primary-rgb), .1), rgba(var(--vz-primary-rgb), .025)),
+    var(--vz-card-bg);
+  box-shadow: 0 2px 5px rgba(30, 41, 59, .08);
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.category-row:hover {
+  border-color: var(--vz-primary);
+  background:
+    linear-gradient(135deg, rgba(var(--vz-primary-rgb), .16), rgba(var(--vz-primary-rgb), .05)),
+    var(--vz-card-bg);
+  box-shadow: 0 4px 10px rgba(var(--vz-primary-rgb), .14);
+  transform: translateY(-1px);
+}
+
+.category-row.active {
+  border-color: var(--vz-primary);
+  border-left-color: var(--vz-primary);
+  background: rgba(var(--vz-primary-rgb), .18);
+  box-shadow: 0 0 0 2px rgba(var(--vz-primary-rgb), .12);
+  font-weight: 600;
+}
+
+.drag-handle {
+  color: var(--vz-secondary-color);
+  cursor: grab;
+}
+
+.category-toggle,
+.category-toggle-spacer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+}
+
+.category-toggle {
+  padding: 0;
+  border: 1px solid rgba(var(--vz-primary-rgb), .25);
+  border-radius: 6px;
+  background: rgba(var(--vz-primary-rgb), .1);
+  color: var(--vz-primary);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.category-toggle:hover {
+  border-color: var(--vz-primary);
+  background: var(--vz-primary);
+  color: #fff;
+}
+
+.category-icon {
+  color: var(--vz-warning);
+  font-size: 18px;
+}
+
+.empty-drop-zone {
+  min-height: 34px;
+  margin: 4px 0 8px;
+  padding: 7px 10px;
+  border: 1px dashed var(--vz-border-color);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 6px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, .15);
+}
+
+.cdk-drag-placeholder {
+  opacity: .25;
+}

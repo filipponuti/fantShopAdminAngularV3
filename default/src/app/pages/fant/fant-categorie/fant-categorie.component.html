@@ -1,0 +1,144 @@
+<app-breadcrumbs title="Categorie" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
+
+@if (error) {
+  <div class="alert alert-danger" role="alert">{{ error }}</div>
+}
+@if (success) {
+  <div class="alert alert-success" role="status">{{ success }}</div>
+}
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex align-items-center flex-wrap gap-2">
+        <div class="flex-grow-1">
+          <h4 class="card-title mb-1">Albero categorie</h4>
+          <p class="text-muted mb-0">Trascina le righe per modificare ordine e categoria padre.</p>
+        </div>
+        <div class="btn-group" role="group" aria-label="Controlli visualizzazione albero">
+          <button class="btn btn-soft-primary" type="button" [disabled]="loading || !categories.length" (click)="expandAll()">
+            <i class="ri-arrow-down-s-line me-1"></i> Espandi tutti
+          </button>
+          <button class="btn btn-soft-primary" type="button" [disabled]="loading || !categories.length" (click)="collapseAll()">
+            <i class="ri-arrow-up-s-line me-1"></i> Chiudi tutti
+          </button>
+        </div>
+        <button class="btn btn-info add-btn" type="button" (click)="newCategory(categoryModal)">
+          <i class="ri-add-line me-1"></i> Nuova categoria
+        </button>
+      </div>
+      <div class="card-body">
+        @if (loading) {
+          <div class="text-center py-5"><span class="spinner-border text-primary"></span></div>
+        } @else {
+          <ng-container
+            [ngTemplateOutlet]="categoryList"
+            [ngTemplateOutletContext]="{ nodes: tree, parentId: 0, level: 0 }">
+          </ng-container>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #categoryList let-nodes="nodes" let-parentId="parentId" let-level="level">
+  <div
+    class="category-list"
+    [class.category-list-child]="level > 0"
+    cdkDropList
+    [id]="'category-list-' + parentId"
+    [cdkDropListData]="nodes"
+    [cdkDropListConnectedTo]="dropListIds"
+    (cdkDropListDropped)="drop($event, parentId)">
+    @for (node of nodes; track node.id) {
+      <div class="category-node" cdkDrag [cdkDragData]="node">
+        <div class="category-row d-flex align-items-center" [class.active]="selectedId === node.id" (click)="edit(node, categoryModal)">
+          <span class="drag-handle me-2" cdkDragHandle title="Trascina"><i class="ri-drag-move-2-line"></i></span>
+          @if (node.children.length) {
+            <button
+              type="button"
+              class="category-toggle me-2"
+              [attr.aria-label]="isExpanded(node.id) ? 'Comprimi ' + node.name : 'Espandi ' + node.name"
+              [attr.aria-expanded]="isExpanded(node.id)"
+              (click)="$event.stopPropagation(); toggleNode(node.id)">
+              <i [class]="isExpanded(node.id) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line'"></i>
+            </button>
+          } @else {
+            <span class="category-toggle-spacer me-2"></span>
+          }
+          <span class="category-icon me-2"><i class="ri-folder-3-line"></i></span>
+          <span class="flex-grow-1 text-truncate">{{ categoryLabel(node) }}</span>
+          <button type="button" class="btn btn-sm btn-ghost-primary" title="Aggiungi sottocategoria" (click)="$event.stopPropagation(); newCategory(categoryModal, node.id)">
+            <i class="ri-add-line"></i>
+          </button>
+        </div>
+        @if (isExpanded(node.id)) {
+          <ng-container
+            [ngTemplateOutlet]="categoryList"
+            [ngTemplateOutletContext]="{ nodes: node.children, parentId: node.id, level: level + 1 }">
+          </ng-container>
+        }
+      </div>
+    }
+    @if (!nodes.length) {
+      <div class="empty-drop-zone text-muted">{{ level === 0 ? 'Nessuna categoria presente.' : 'Trascina qui per creare una sottocategoria.' }}</div>
+    }
+  </div>
+</ng-template>
+
+<ng-template #categoryModal role="document" let-modal>
+  <div class="modal-header bg-info-subtle p-3">
+    <h5 class="modal-title">{{ selectedId ? 'Modifica categoria' : 'Nuova categoria' }}</h5>
+    <button type="button" class="btn-close" aria-label="Chiudi" [disabled]="saving" (click)="modal.dismiss('close')"></button>
+  </div>
+  <form [formGroup]="categoryForm" (ngSubmit)="save()" class="tablelist-form" autocomplete="off">
+    <div class="modal-body">
+      <div class="row g-3">
+        <div class="col-12">
+          <label for="category-name" class="form-label">Nome *</label>
+          <input id="category-name" class="form-control" formControlName="name" [class.is-invalid]="categoryForm.controls['name'].touched && categoryForm.controls['name'].invalid">
+          <div class="invalid-feedback">Il nome è obbligatorio.</div>
+        </div>
+        <div class="col-12">
+          <label for="category-slug" class="form-label">Slug</label>
+          <input id="category-slug" class="form-control" formControlName="slug" placeholder="Generato automaticamente se vuoto">
+        </div>
+        <div class="col-md-6">
+          <label for="category-parent" class="form-label">Categoria padre</label>
+          <select id="category-parent" class="form-select" formControlName="parent">
+            <option [ngValue]="0">Nessuna</option>
+            @for (category of categories; track category.id) {
+              @if (category.id !== selectedId) {
+                <option [ngValue]="category.id">{{ category.name }}</option>
+              }
+            }
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="category-display" class="form-label">Visualizzazione</label>
+          <select id="category-display" class="form-select" formControlName="display">
+            @for (option of displayOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-12">
+          <label for="category-description" class="form-label">Descrizione</label>
+          <textarea id="category-description" class="form-control" rows="5" formControlName="description"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="hstack gap-2 justify-content-end w-100">
+        @if (selectedId) {
+          <button type="button" class="btn btn-outline-danger me-auto" [disabled]="saving" (click)="deleteSelected()">Elimina</button>
+        }
+        <button type="button" class="btn btn-light" [disabled]="saving" (click)="modal.dismiss('cancel')">Annulla</button>
+        <button type="submit" class="btn btn-success" [disabled]="saving">
+          @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          {{ selectedId ? 'Aggiorna' : 'Aggiungi categoria' }}
+        </button>
+      </div>
+    </div>
+  </form>
+</ng-template>
