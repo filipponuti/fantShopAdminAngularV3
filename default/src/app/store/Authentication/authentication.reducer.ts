@@ -23,6 +23,6 @@ export const authenticationReducer = createReducer(
     on(login, (state) => ({ ...state, error: null })),
     on(loginSuccess, (state, { user }) => ({ ...state, isLoggedIn: true, user, error: null, })),
     on(loginFailure, (state, { error }) => ({ ...state, error })),
-    on(logout, (state) => ({ ...state, user: null })),
+    on(logout, (state) => ({ ...state, isLoggedIn: false, user: null })),
 
 );

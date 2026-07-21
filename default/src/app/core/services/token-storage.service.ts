@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
-const TOKEN_KEY = 'auth-token';
-const USER_KEY = 'currentUser';
+const TOKEN_KEY = 'fant-admin-access-token';
+const USER_KEY = 'fant-admin-user';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +10,11 @@ export class TokenStorageService {
   constructor() { }
 
   signOut(): void {
-    window.sessionStorage.clear();
+    for (const storage of [window.sessionStorage, window.localStorage]) {
+      storage.removeItem(TOKEN_KEY);
+      storage.removeItem(USER_KEY);
+      storage.removeItem('fant-admin-refresh-token');
+    }
   }
 
   public saveToken(token: string): void {
@@ -19,7 +23,7 @@ export class TokenStorageService {
   }
 
   public getToken(): string | null {
-    return sessionStorage.getItem('token');
+    return sessionStorage.getItem(TOKEN_KEY) ?? localStorage.getItem(TOKEN_KEY);
   }
 
   public saveUser(user: any): void {
@@ -28,7 +32,7 @@ export class TokenStorageService {
   }
 
   public getUser(): any {
-    const user = window.sessionStorage.getItem(USER_KEY);    
+    const user = window.sessionStorage.getItem(USER_KEY) ?? window.localStorage.getItem(USER_KEY);
     if (user) {
       return JSON.parse(user);
     }

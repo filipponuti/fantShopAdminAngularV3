@@ -4,7 +4,9 @@
 
 export const environment = {
   production: false,
-  defaultauth: 'fakebackend',
+  defaultauth: 'wordpress',
+  siteUrl: 'https://www.filipponuti.it/agenti',
+  apiNamespace: 'fant-admin/v1',
   firebaseConfig: {
     apiKey: '',
     authDomain: '',

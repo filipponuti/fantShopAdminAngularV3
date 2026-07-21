@@ -1,113 +1,80 @@
 import { Component, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs';
 
-// Login Auth
-import { environment } from '../../../environments/environment';
 import { AuthenticationService } from '../../core/services/auth.service';
-import { AuthfakeauthenticationService } from '../../core/services/authfake.service';
-import { first } from 'rxjs/operators';
-import { ToastService } from './toast-service';
-import { Store } from '@ngrx/store';
-import { login } from 'src/app/store/Authentication/authentication.actions';
 
 @Component({
-    selector: 'app-login',
-    templateUrl: './login.component.html',
-    styleUrls: ['./login.component.scss'],
-    standalone: false
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss'],
+  standalone: false
 })
-
-/**
- * Login Component
- */
 export class LoginComponent implements OnInit {
-
-  // Login Form
-  loginForm!: UntypedFormGroup;
+  loginForm!: FormGroup;
   submitted = false;
-  fieldTextType!: boolean;
+  loading = false;
+  fieldTextType = false;
   error = '';
-  returnUrl!: string;
+  returnUrl = '/';
+  readonly year = new Date().getFullYear();
 
-  toast!: false;
-
-  // set the current year
-  year: number = new Date().getFullYear();
-
-  constructor(private formBuilder: UntypedFormBuilder,private authenticationService: AuthenticationService,private router: Router,
-    private authFackservice: AuthfakeauthenticationService, private route: ActivatedRoute, public toastService: ToastService,
-    private store: Store) {
-      // redirect to home if already logged in
-      if (this.authenticationService.currentUserValue) {
-        this.router.navigate(['/']);
-      }
-     }
+  constructor(
+    private readonly formBuilder: FormBuilder,
+    private readonly authenticationService: AuthenticationService,
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
-    if(sessionStorage.getItem('currentUser')) {
-      this.router.navigate(['/']);
+    this.returnUrl = this.safeReturnUrl(this.route.snapshot.queryParams['returnUrl']);
+
+    if (this.authenticationService.isAuthenticated) {
+      void this.router.navigateByUrl(this.returnUrl);
+      return;
     }
-    /**
-     * Form Validatyion
-     */
-     this.loginForm = this.formBuilder.group({
-      email: ['admin@themesbrand.com', [Validators.required, Validators.email]],
-      password: ['123456', [Validators.required]],
+
+    this.loginForm = this.formBuilder.group({
+      login: ['', Validators.required],
+      password: ['', Validators.required],
+      remember: [false]
     });
-    // get return url from route parameters or default to '/'
-    // this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
   }
 
-  // convenience getter for easy access to form fields
-  get f() { return this.loginForm.controls; }
+  get f() {
+    return this.loginForm.controls;
+  }
 
-  /**
-   * Form submit
-   */
-   onSubmit() {
+  onSubmit(): void {
     this.submitted = true;
+    this.error = '';
 
-     // Login Api
-     this.store.dispatch(login({ email: this.f['email'].value, password: this.f['password'].value }));
-    // this.authenticationService.login(this.f['email'].value, this.f['password'].value).subscribe((data:any) => { 
-    //   if(data.status == 'success'){
-    //     sessionStorage.setItem('toast', 'true');
-    //     sessionStorage.setItem('currentUser', JSON.stringify(data.data));
-    //     sessionStorage.setItem('token', data.token);
-    //     this.router.navigate(['/']);
-    //   } else {
-    //     this.toastService.show(data.data, { classname: 'bg-danger text-white', delay: 15000 });
-    //   }
-    // });
+    if (this.loginForm.invalid || this.loading) {
+      return;
+    }
 
-    // stop here if form is invalid
-    // if (this.loginForm.invalid) {
-    //   return;
-    // } else {
-    //   if (environment.defaultauth === 'firebase') {
-    //     this.authenticationService.login(this.f['email'].value, this.f['password'].value).then((res: any) => {
-    //       this.router.navigate(['/']);
-    //     })
-    //       .catch(error => {
-    //         this.error = error ? error : '';
-    //       });
-    //   } else {
-    //     this.authFackservice.login(this.f['email'].value, this.f['password'].value).pipe(first()).subscribe(data => {
-    //           this.router.navigate(['/']);
-    //         },
-    //         error => {
-    //           this.error = error ? error : '';
-    //         });
-    //   }
-    // }
+    this.loading = true;
+    this.authenticationService.login(
+      this.f['login'].value,
+      this.f['password'].value,
+      !!this.f['remember'].value
+    ).pipe(finalize(() => this.loading = false)).subscribe({
+      next: () => void this.router.navigateByUrl(this.returnUrl),
+      error: error => {
+        this.error = error?.error?.message
+          ?? 'Accesso non riuscito. Verifica le credenziali e riprova.';
+      }
+    });
   }
 
-  /**
-   * Password Hide/Show
-   */
-   toggleFieldTextType() {
+  toggleFieldTextType(): void {
     this.fieldTextType = !this.fieldTextType;
   }
 
+  private safeReturnUrl(value: unknown): string {
+    return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
+      ? value
+      : '/';
+  }
 }

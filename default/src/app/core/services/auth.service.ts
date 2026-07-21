@@ -1,127 +1,151 @@
 import { Injectable } from '@angular/core';
-import { getFirebaseBackend } from '../../authUtils';
-import { User } from 'src/app/store/Authentication/auth.models';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { catchError, map } from 'rxjs/operators';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { GlobalComponent } from "../../global-component";
-import { Store } from '@ngrx/store';
-import { RegisterSuccess, loginFailure, loginSuccess, logout, logoutSuccess } from 'src/app/store/Authentication/authentication.actions';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, catchError, of, tap, throwError } from 'rxjs';
 
-const AUTH_API = GlobalComponent.AUTH_API;
+import { environment } from '../../../environments/environment';
+import { AuthSession, User } from '../../store/Authentication/auth.models';
 
-const httpOptions = {
-    headers: new HttpHeaders({ 'Content-Type': 'application/json' })
-  };
-  
+const USER_KEY = 'fant-admin-user';
+const ACCESS_TOKEN_KEY = 'fant-admin-access-token';
+const REFRESH_TOKEN_KEY = 'fant-admin-refresh-token';
+const DEVICE_ID_KEY = 'fant-admin-device-id';
 
 @Injectable({ providedIn: 'root' })
-
-/**
- * Auth-service Component
- */
 export class AuthenticationService {
+  private readonly apiUrl = `${environment.siteUrl.replace(/\/$/, '')}/wp-json/${environment.apiNamespace}`;
+  private readonly currentUserSubject = new BehaviorSubject<User | null>(this.readUser());
 
-    user!: User;
-    currentUserValue: any;
+  readonly currentUser$ = this.currentUserSubject.asObservable();
 
-    private currentUserSubject: BehaviorSubject<User>;
-    // public currentUser: Observable<User>;
+  constructor(private readonly http: HttpClient) {}
 
-    constructor(private http: HttpClient, private store: Store) {
-        this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(sessionStorage.getItem('currentUser')!));
-        // this.currentUser = this.currentUserSubject.asObservable();
-     }
+  get currentUserValue(): User | null {
+    return this.currentUserSubject.value;
+  }
 
-    /**
-     * Performs the register
-     * @param email email
-     * @param password password
-     */
-    register(email: string, first_name: string, password: string) {        
-        // return getFirebaseBackend()!.registerUser(email, password).then((response: any) => {
-        //     const user = response;
-        //     return user;
-        // });
+  get accessToken(): string | null {
+    return this.readStorageValue(ACCESS_TOKEN_KEY);
+  }
 
-        // Register Api
-        return this.http.post(AUTH_API + 'signup', {
-            email,
-            first_name,
-            password,
-          }, httpOptions).pipe(
-            map((response: any) => {
-                const user = response;
-                return user;
-            }),
-            catchError((error: any) => {
-                const errorMessage = 'Login failed'; // Customize the error message as needed
-                this.store.dispatch(loginFailure({ error: errorMessage }));
-                return throwError(errorMessage);
-            })
-        );
+  get refreshToken(): string | null {
+    return this.readStorageValue(REFRESH_TOKEN_KEY);
+  }
+
+  get isAuthenticated(): boolean {
+    return !!this.accessToken && !!this.currentUserValue;
+  }
+
+  isApiRequest(url: string): boolean {
+    return url.startsWith(this.apiUrl);
+  }
+
+  isAuthRequest(url: string): boolean {
+    return url.startsWith(`${this.apiUrl}/auth/`);
+  }
+
+  login(login: string, password: string, remember: boolean): Observable<AuthSession> {
+    return this.http.post<AuthSession>(`${this.apiUrl}/auth/login`, {
+      login,
+      password,
+      deviceId: this.deviceId(),
+      deviceName: this.deviceName()
+    }).pipe(tap(session => this.saveSession(session, remember)));
+  }
+
+  register(_email: string, _name: string, _password: string): Observable<never> {
+    return throwError(() => new Error(
+      'La registrazione non è disponibile: gli account vengono gestiti da WordPress.'
+    ));
+  }
+
+  refresh(): Observable<AuthSession> {
+    const refreshToken = this.refreshToken;
+    if (!refreshToken) {
+      return throwError(() => new Error('Sessione non disponibile.'));
     }
 
-    /**
-     * Performs the auth
-     * @param email email of user
-     * @param password password of user
-     */
-    login(email: string, password: string) {
-        // return getFirebaseBackend()!.loginUser(email, password).then((response: any) => {
-        //     const user = response;
-        //     return user;
-        // });
+    const remember = localStorage.getItem(REFRESH_TOKEN_KEY) !== null;
+    return this.http.post<AuthSession>(`${this.apiUrl}/auth/refresh`, { refreshToken }).pipe(
+      tap(session => this.saveSession(session, remember))
+    );
+  }
 
-        return this.http.post(AUTH_API + 'signin', {
-            email,
-            password
-          }, httpOptions).pipe(
-              map((response: any) => {
-                const user = response;
-                return user;
-            }),
-            catchError((error: any) => {
-                const errorMessage = 'Login failed'; // Customize the error message as needed
-                return throwError(errorMessage);
-            })
-        );
+  me(): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/me`).pipe(
+      tap(user => this.currentUserSubject.next(user))
+    );
+  }
+
+  logout(): void {
+    const refreshToken = this.refreshToken;
+    this.clearSession();
+
+    if (refreshToken) {
+      this.http.post<void>(`${this.apiUrl}/auth/logout`, { refreshToken })
+        .pipe(catchError(() => of(undefined)))
+        .subscribe();
+    }
+  }
+
+  clearSession(): void {
+    for (const storage of [sessionStorage, localStorage]) {
+      storage.removeItem(USER_KEY);
+      storage.removeItem(ACCESS_TOKEN_KEY);
+      storage.removeItem(REFRESH_TOKEN_KEY);
+      // Remove the old Velzon keys during migration.
+      storage.removeItem('currentUser');
+      storage.removeItem('token');
+      storage.removeItem('auth-token');
+    }
+    this.currentUserSubject.next(null);
+  }
+
+  private saveSession(session: AuthSession, remember: boolean): void {
+    this.clearStoredSessionValues();
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem(USER_KEY, JSON.stringify(session.user));
+    storage.setItem(ACCESS_TOKEN_KEY, session.accessToken);
+    storage.setItem(REFRESH_TOKEN_KEY, session.refreshToken);
+    this.currentUserSubject.next(session.user);
+  }
+
+  private clearStoredSessionValues(): void {
+    for (const storage of [sessionStorage, localStorage]) {
+      storage.removeItem(USER_KEY);
+      storage.removeItem(ACCESS_TOKEN_KEY);
+      storage.removeItem(REFRESH_TOKEN_KEY);
+      storage.removeItem('currentUser');
+      storage.removeItem('token');
+    }
+  }
+
+  private readUser(): User | null {
+    const value = this.readStorageValue(USER_KEY);
+    if (!value) {
+      return null;
     }
 
-    /**
-     * Returns the current user
-     */
-    public currentUser(): any {
-        return getFirebaseBackend()!.getAuthenticatedUser();
+    try {
+      return JSON.parse(value) as User;
+    } catch {
+      return null;
     }
+  }
 
-    /**
-     * Logout the user
-     */
-    logout() {
-        this.store.dispatch(logout());
-        // logout the user
-        // return getFirebaseBackend()!.logout();
-        sessionStorage.removeItem('currentUser');
-        sessionStorage.removeItem('token');
-        this.currentUserSubject.next(null!);
+  private readStorageValue(key: string): string | null {
+    return sessionStorage.getItem(key) ?? localStorage.getItem(key);
+  }
 
-        return of(undefined).pipe(
-        
-        );
-
+  private deviceId(): string {
+    let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem(DEVICE_ID_KEY, deviceId);
     }
+    return deviceId;
+  }
 
-    /**
-     * Reset password
-     * @param email email
-     */
-    resetPassword(email: string) {
-        return getFirebaseBackend()!.forgetPassword(email).then((response: any) => {
-            const message = response.data;
-            return message;
-        });
-    }
-
+  private deviceName(): string {
+    return `${navigator.platform || 'Browser'} - ${navigator.userAgent.slice(0, 120)}`;
+  }
 }
-

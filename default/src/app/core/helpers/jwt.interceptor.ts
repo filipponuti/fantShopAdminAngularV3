@@ -1,52 +1,91 @@
 import { Injectable } from '@angular/core';
-import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import {
+  HttpErrorResponse,
+  HttpEvent,
+  HttpHandler,
+  HttpInterceptor,
+  HttpRequest
+} from '@angular/common/http';
+import { Router } from '@angular/router';
+import {
+  BehaviorSubject,
+  Observable,
+  catchError,
+  filter,
+  finalize,
+  switchMap,
+  take,
+  throwError
+} from 'rxjs';
 
 import { AuthenticationService } from '../services/auth.service';
-import { AuthfakeauthenticationService } from '../services/authfake.service';
-import { environment } from '../../../environments/environment';
-import { Router } from '@angular/router';
 
 @Injectable()
 export class JwtInterceptor implements HttpInterceptor {
-    constructor(
-        private authenticationService: AuthenticationService,
-        private authfackservice: AuthfakeauthenticationService,
-        public router:Router
-    ) { }
+  private refreshing = false;
+  private readonly refreshedToken$ = new BehaviorSubject<string | null>(null);
 
-    intercept(
-        request: HttpRequest<any>,
-        next: HttpHandler
-    ): Observable<HttpEvent<any>> {
-        if (environment.defaultauth === 'firebase') {
-            // add authorization header with jwt token if available
-            let currentUser = this.authenticationService.currentUser();
-            if (currentUser && currentUser.token) {
-                request = request.clone({
-                    setHeaders: {
-                        Authorization: `Bearer ${currentUser.token}`,
-                    },
-                });
-            }
-        } else {
-            // add authorization header with jwt token if available
-            const currentUser = this.authfackservice.currentUserValue;
-            if (currentUser && currentUser.token) {
-                request = request.clone({
-                    setHeaders: {
-                        Authorization: `Bearer ${currentUser.token}`,
-                    },
-                });
-            }
+  constructor(
+    private readonly authenticationService: AuthenticationService,
+    private readonly router: Router
+  ) {}
+
+  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    const isApiRequest = this.authenticationService.isApiRequest(request.url);
+    const isAuthRequest = this.authenticationService.isAuthRequest(request.url);
+    const token = this.authenticationService.accessToken;
+    const authenticatedRequest = isApiRequest && !isAuthRequest && token
+      ? this.withToken(request, token)
+      : request;
+
+    return next.handle(authenticatedRequest).pipe(
+      catchError(error => {
+        if (
+          error instanceof HttpErrorResponse &&
+          error.status === 401 &&
+          isApiRequest &&
+          !isAuthRequest &&
+          this.authenticationService.refreshToken
+        ) {
+          return this.handleUnauthorized(request, next);
         }
-        return next.handle(request).pipe(
-            catchError((error) => {
-              if (error.status === 401) {
-                this.router.navigate(['/auth/login']);
-              }
-              return throwError(error);
-            })
-          );;
+        return throwError(() => error);
+      })
+    );
+  }
+
+  private handleUnauthorized(
+    request: HttpRequest<unknown>,
+    next: HttpHandler
+  ): Observable<HttpEvent<unknown>> {
+    if (this.refreshing) {
+      return this.refreshedToken$.pipe(
+        filter((token): token is string => token !== null),
+        take(1),
+        switchMap(token => next.handle(this.withToken(request, token)))
+      );
     }
+
+    this.refreshing = true;
+    this.refreshedToken$.next(null);
+
+    return this.authenticationService.refresh().pipe(
+      switchMap(session => {
+        this.refreshedToken$.next(session.accessToken);
+        return next.handle(this.withToken(request, session.accessToken));
+      }),
+      catchError(error => {
+        this.authenticationService.clearSession();
+        void this.router.navigate(['/auth/login']);
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        this.refreshing = false;
+      })
+    );
+  }
+
+  private withToken(request: HttpRequest<unknown>, token: string): HttpRequest<unknown> {
+    return request.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+  }
 }
