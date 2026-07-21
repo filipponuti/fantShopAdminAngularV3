@@ -1,0 +1,50 @@
+
+
+Sviluppiamo il progetto Angular.
+E' una Dashboard con delle attività relative ad un suito woocommerce.
+Nella cartella /default è presente il progetto in Angular 21.
+nella cartella /varie ci possono essere altri files e progetti di apppoggio.
+
+
+Questa app si deve collegare ai dati di un sito woocommerce.
+il sito è: https://www.filipponuti.it/agenti.
+site_url: https://www.filipponuti.it/agenti
+Gestiamolo in una variabile perchè potrebbe anche cambiare.
+
+Quindi quando si fa il login, bisogna usare le credenziali degli utenti admin del sito.
+
+Serve un plugin su wocommerce per fare questo; crealo e installalo.
+Il plugin custom per woocommerce lo chiami  "fantAdminApi".
+Per ralizzarlo prendi spunto da C:\DEV-FANTINI\fantShopAdminAngularV3\varie\agent-mobile-api.
+
+Regole
+- al login viene fatto da un utente di tipo "administrator".
+- le credenziali sono quelle di Wordpress.
+
+
+Note aggiuntive:
+
+Usare le Api di Woocommerce, Wordpress ed eventualmente crearne di Custom.
+
+Dobbiamo arrivare a far fare un login a uno user che ha il ruolo di "administrator".
+
+Wordpress: 6.9.4
+Woocommercce: 10.8.1
+HPOS: Attivo - Attenzione! Prevedere anche la possibilita che non sia Attivo, la stessa app verà utilizzata su altro dominio in cui HPOS è disattivata.
+
+
+PHP: 8.5
+scripts_php-php proviene da Code Snippets, ma non è usato ora.
+prova questo ambiente di test: https://www.filipponuti.it/agenti
+username: codex
+password: codex
+email: codex@filipponuti.it
+ci sono dei plugins, dimmi quali ti servono e se sono necessari. installa quelli che mancano; se non riesci dimmeli che li installo io.
+nell'ambieante di test per ora non inviare email.
+
+per il login: https://www.filipponuti.it/agenti/wp-admin
+
+
+Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
+
+---------------------------
