@@ -1,0 +1,17 @@
+# Angular SPA su Apache (Serverplan) - base-href=/test/
+# Se cambi base-href, aggiorna RewriteBase e le RewriteRule qui sotto.
+
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /test/
+
+  # File/cartelle reali: non toccare
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # Route Angular -> index.html
+  RewriteRule . /test/index.html [L]
+</IfModule>

@@ -2,9 +2,13 @@
 
 Sviluppiamo il progetto Angular.
 E' una Dashboard con delle attività relative ad un suito woocommerce.
+Il progetto è già creato, nasce dal tema Velzon.
+Noi lo andiamo a personalizzare.
 Nella cartella /default è presente il progetto in Angular 21.
 nella cartella /varie ci possono essere altri files e progetti di apppoggio.
 
+Analizza il progetto in /default .
+La prima attività che andiamo a personalizzare è il login.
 
 Questa app si deve collegare ai dati di un sito woocommerce.
 il sito è: https://www.filipponuti.it/agenti.
@@ -48,3 +52,38 @@ per il login: https://www.filipponuti.it/agenti/wp-admin
 Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
 
 ---------------------------
+
+Nella sidebar del menu, prima di "Cruscotti" aggiungere:
+ - Home: va creata una pagina "fant-home" che al momento prende spunto da "Dashboards > CRM"
+ - Shop: voce di menu con sottovoci
+ -   + Categorie: Sottovoce di menu: creare una pagina "fant-categorie". Questa pagina legge le categorie da woocommerce e permette di fare attività CRUD. 
+       Le categorie sono riportare ad albero ed e possibile spostare le celle col drad & drop.
+
+Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
+
+---------------------------
+
+miglioriamo lìinterfaccia. Le celle delle Categorie sono poco visibili. 
+inoltre ogni cella, se ha dei figli , deve avere la possibilità di estendere e collassare i nodi figli.
+In testa ci devono essere due pulsanti per "espandi tutti" e "chiudi tutti" che lascia visibili sono quelli di primo livello.
+
+Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
+--------------
+
+Un altro miglioramento. In ogni nodo, prima dell'icona della cartella, aggiungi due frecce, una rivolta verso l'alto ed una verso il basso,
+che fanno spostare il nodo all'interno del propro range, o dopo l'elemento successivo se eiste, o prima dell'elemento preceente se esiste.
+
+
+Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
+--------------
+
+quando faccio la buuild ho bisogno di passare un parametro per impostare site_url
+in modo che possa puntare un determinato woocommerce.
+Nella pagina Home, riportare il valore del parametro site_url ( ad esempio nel primo riquadro dove ora c'è "vendite").
+
+Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
+-------------
+
+
+
+
