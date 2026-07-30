@@ -7,9 +7,10 @@ import { SharedModule } from '../../shared/shared.module';
 import { FantRoutingModule } from './fant-routing.module';
 import { FantHomeComponent } from './fant-home/fant-home.component';
 import { FantCategorieComponent } from './fant-categorie/fant-categorie.component';
+import { FantCataloghiComponent } from './fant-cataloghi/fant-cataloghi.component';
 
 @NgModule({
-  declarations: [FantHomeComponent, FantCategorieComponent],
+  declarations: [FantHomeComponent, FantCategorieComponent, FantCataloghiComponent],
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -19,4 +20,3 @@ import { FantCategorieComponent } from './fant-categorie/fant-categorie.componen
   ]
 })
 export class FantModule {}
-

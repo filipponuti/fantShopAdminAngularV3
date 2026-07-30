@@ -23,6 +23,12 @@ export const MENU: MenuItem[] = [
         label: 'MENUITEMS.FANT.CATEGORIES',
         link: '/fant-categorie',
         parentId: 10002
+      },
+      {
+        id: 10004,
+        label: 'MENUITEMS.FANT.CATALOGS',
+        link: '/fant-cataloghi',
+        parentId: 10002
       }
     ]
   },

@@ -84,6 +84,68 @@ Nella pagina Home, riportare il valore del parametro site_url ( ad esempio nel p
 Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
 -------------
 
+Nella pagina del login sostituisci l'immagine di sfondo con C:\DEV-FANTINI\fantShopAdminAngularV3\varie\fantini-login.jpg, salvala negli assets.
+Crea l'icona dell'applicazione favicon da C:\DEV-FANTINI\fantShopAdminAngularV3\varie\logo_circolare.png
+
+------
+Nella pagina del login sostituisci l'immagine con la scritta Velzon deve diventare "Fantini".
+il testo "Amministrazione WooCommerce" diventa "Shop Admin".
 
 
+
+------
+
+
+Nella sidebar del menu, alla voce "Shop" aggiungi la sottovoce:
+ -   + Cataloghi: Sottovoce di menu: creare una pagina "fant-cataloghi".
+       Quest apagina verrà implementata successivamente per la gestione dei cataloghi da stampare.
+
+Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
+
+
+---------------
+
+Per il sito woocommerce,
+Devo creare la gestione dei cataloghi da stampare.
+
+Qui c'è la versione corrente che voglio rifare e migliorare: C:\DEV-FANTINI\fantShopAdminAngularV3\catalogo_v1\fantini-cataloghi
+Il tema chid è qui: C:\DEV-FANTINI\fantShopAdminAngularV3\catalogo_v1\astra-child
+
+Voglio creare una versione nuova e migliore, all'interno di questo progetto.
+
+Per ogni catalogi si possono definire quali articoli lo compongono in base a diverse regole.
+
+I dati verranno salvati in file .json.
+
+Intanto realizziamo la pagina con la lista dei cataloghi.
+Come template prendiamo default/apps-ecommerce-customers.html# ; ricercalo.
+
+Da questa pagina possiamo creare, modificare eliminare cataloghi.
+
+Ogni Catalogo viene salvato in un file.json; il nome del file è dato dal suo codice.
+In ogni catalogo ci sono 2 sezioni: 
+ - testata
+ - prodotti
+
+Quando creiamo un nuovo catalogo, viene creato il record di testata; 
+vengono chiesti questi 2 campi obboligaotori:
+ - codice
+ - Nome
+
+Analizza e dimmi tu dove salvare i json.
+Se è utile, oltre a un singolo file per catalogo si può avere un altro file 
+con l0elendo di tutti i cataloghi creati.
+
+
+Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
+
+
+---------------
+
+
+
+
+
+
+---------------
 

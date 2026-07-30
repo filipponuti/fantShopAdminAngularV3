@@ -3,10 +3,12 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { FantHomeComponent } from './fant-home/fant-home.component';
 import { FantCategorieComponent } from './fant-categorie/fant-categorie.component';
+import { FantCataloghiComponent } from './fant-cataloghi/fant-cataloghi.component';
 
 const routes: Routes = [
   { path: 'fant-home', component: FantHomeComponent },
-  { path: 'fant-categorie', component: FantCategorieComponent }
+  { path: 'fant-categorie', component: FantCategorieComponent },
+  { path: 'fant-cataloghi', component: FantCataloghiComponent }
 ];
 
 @NgModule({
@@ -14,4 +16,3 @@ const routes: Routes = [
   exports: [RouterModule]
 })
 export class FantRoutingModule {}
-

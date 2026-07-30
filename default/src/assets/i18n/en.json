@@ -11,7 +11,8 @@
     "FANT": {
       "HOME": "Home",
       "SHOP": "Shop",
-      "CATEGORIES": "Categories"
+      "CATEGORIES": "Categories",
+      "CATALOGS": "Catalogs"
     },
     "DASHBOARD": {
       "TEXT": "Dashboards",
