@@ -53,3 +53,8 @@ Apri un ticket Serverplan chiedendo di whitelistare il falso positivo (firma tip
 3. Ricarica il `.htaccess` aggiornato da `deploy-test/.htaccess`.
 4. Prova direttamente `https://TUO-DOMINIO/test/index.html` — se apre, il problema è solo il rewrite; se dà 403, è permessi o file mancante/quarantena.
 5. Controlla cPanel → Sicurezza → Quarantena Malware: l'AV può aver messo i file in quarantena dopo l'upload.
+
+
+
+
+npm --prefix .\default run build -- --define "SITE_URL='https://www.filipponuti.it/agenti'"

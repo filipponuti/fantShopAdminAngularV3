@@ -1,3 +1,24 @@
-.catalog-placeholder {
-  padding: 72px 24px;
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable i {
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.catalog-code,
+.catalog-code-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.catalog-code {
+  font-size: 12px;
+  text-transform: none;
+}
+
+.empty-state {
+  min-height: 190px;
 }

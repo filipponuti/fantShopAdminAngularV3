@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { SharedModule } from '../../shared/shared.module';
 import { FantRoutingModule } from './fant-routing.module';
@@ -15,6 +16,7 @@ import { FantCataloghiComponent } from './fant-cataloghi/fant-cataloghi.componen
     CommonModule,
     ReactiveFormsModule,
     DragDropModule,
+    NgbPaginationModule,
     SharedModule,
     FantRoutingModule
   ]

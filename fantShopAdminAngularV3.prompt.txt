@@ -142,10 +142,11 @@ Analizza il tutto e dimmi se è tutto chiaro prima di procedere.
 
 ---------------
 
+il parametro 
+defaultSiteUrl = 'https://www.filipponuti.it/agenti' lo vorrei passare in compilazione della build,
+per poter decidere a quale store puntare.
 
-
-
-
+dammi il comando.
 
 ---------------
 

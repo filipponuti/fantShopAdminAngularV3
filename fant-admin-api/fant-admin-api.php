@@ -2,7 +2,7 @@
 /**
  * Plugin Name: fantAdminApi
  * Description: API REST sicure per la dashboard amministrativa WooCommerce fantShopAdmin.
- * Version: 0.2.0
+ * Version: 0.3.0
  * Requires at least: 6.9
  * Requires PHP: 8.1
  * Requires Plugins: woocommerce
@@ -11,12 +11,13 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'FANT_ADMIN_API_VERSION', '0.2.0' );
+define( 'FANT_ADMIN_API_VERSION', '0.3.0' );
 define( 'FANT_ADMIN_API_FILE', __FILE__ );
 define( 'FANT_ADMIN_API_PATH', plugin_dir_path( __FILE__ ) );
 
 require_once FANT_ADMIN_API_PATH . 'includes/class-faa-install.php';
 require_once FANT_ADMIN_API_PATH . 'includes/class-faa-auth.php';
+require_once FANT_ADMIN_API_PATH . 'includes/class-faa-catalogs.php';
 require_once FANT_ADMIN_API_PATH . 'includes/class-faa-api.php';
 
 add_action(

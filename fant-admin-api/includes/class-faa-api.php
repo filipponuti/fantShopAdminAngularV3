@@ -37,6 +37,26 @@ final class Fant_Admin_API_REST {
 		self::route( '/categories/reorder', 'PUT', 'reorder_categories' );
 		self::route( '/categories/(?P<categoryId>\d+)', 'PUT', 'update_category' );
 		self::route( '/categories/(?P<categoryId>\d+)', WP_REST_Server::DELETABLE, 'delete_category' );
+
+		register_rest_route(
+			self::API_NAMESPACE,
+			'/catalogs',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'catalogs' ),
+					'permission_callback' => array( __CLASS__, 'authorized' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'create_catalog' ),
+					'permission_callback' => array( __CLASS__, 'authorized' ),
+				),
+			)
+		);
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::READABLE, 'catalog' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_catalog' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_catalog' );
 	}
 
 	private static function route( string $path, string $methods, string $callback, $permission = null ): void {
@@ -345,6 +365,48 @@ final class Fant_Admin_API_REST {
 
 		self::clear_category_cache();
 		return self::categories();
+	}
+
+	public static function catalogs() {
+		return rest_ensure_response( Fant_Admin_API_Catalogs::all() );
+	}
+
+	public static function catalog( WP_REST_Request $request ) {
+		return rest_ensure_response( Fant_Admin_API_Catalogs::find( (string) $request['catalogCode'] ) );
+	}
+
+	public static function create_catalog( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_Catalogs::create(
+			(string) $request->get_param( 'codice' ),
+			(string) $request->get_param( 'nome' )
+		);
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return new WP_REST_Response( $result, 201 );
+	}
+
+	public static function update_catalog( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		$code   = strtolower( (string) $request['catalogCode'] );
+		if ( isset( $params['codice'] ) && strtolower( trim( (string) $params['codice'] ) ) !== $code ) {
+			return self::error( 'catalog_code_immutable', 'Il codice del catalogo non può essere modificato.', 409 );
+		}
+
+		return rest_ensure_response(
+			Fant_Admin_API_Catalogs::update( $code, (string) ( $params['nome'] ?? '' ) )
+		);
+	}
+
+	public static function delete_catalog( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_Catalogs::delete( (string) $request['catalogCode'] );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return new WP_REST_Response( null, 204 );
 	}
 
 	private static function user_data( WP_User $user ): array {
