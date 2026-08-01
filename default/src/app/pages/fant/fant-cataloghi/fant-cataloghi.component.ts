@@ -38,7 +38,7 @@ export class FantCataloghiComponent implements OnInit {
 
   ngOnInit(): void {
     this.breadCrumbItems = [
-      { label: 'Shop' },
+      { label: 'Cataloghi' },
       { label: 'Cataloghi', active: true }
     ];
     this.catalogForm = this.formBuilder.group({

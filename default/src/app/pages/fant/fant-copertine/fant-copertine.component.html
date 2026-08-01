@@ -1,0 +1,152 @@
+<app-breadcrumbs title="Copertine" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
+
+@if (error) { <div class="alert alert-danger" role="alert">{{ error }}</div> }
+@if (success) { <div class="alert alert-success" role="status">{{ success }}</div> }
+
+<div class="card" id="coverList">
+  <div class="card-header border-bottom-dashed">
+    <div class="row g-4 align-items-center">
+      <div class="col-sm"><h5 class="card-title mb-0">Elenco copertine</h5></div>
+      <div class="col-sm-auto">
+        <button type="button" class="btn btn-success" (click)="openCreate(coverModal)">
+          <i class="ri-add-line align-bottom me-1"></i> Nuova copertina
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body border-bottom-dashed border-bottom">
+    <div class="row g-3">
+      <div class="col-xl-6">
+        <div class="search-box">
+          <input type="search" class="form-control" placeholder="Cerca per codice o nome..." [value]="searchTerm" (input)="setSearch($any($event.target).value)">
+          <i class="ri-search-line search-icon"></i>
+        </div>
+      </div>
+      <div class="col-xl-6 d-flex align-items-center justify-content-xl-end">
+        <span class="text-muted">{{ filteredCovers.length }} copertine</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    @if (loading) {
+      <div class="text-center py-5">
+        <span class="spinner-border text-primary" role="status"></span>
+        <p class="text-muted mt-3 mb-0">Caricamento copertine...</p>
+      </div>
+    } @else {
+      <div class="table-responsive table-card mb-1">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light text-muted">
+            <tr>
+              <th class="sortable" (click)="sortBy('codice')">Codice <i [class]="sortIcon('codice')"></i></th>
+              <th class="sortable" (click)="sortBy('nome')">Nome <i [class]="sortIcon('nome')"></i></th>
+              <th class="sortable text-center" (click)="sortBy('numeroAllegati')">Allegati <i [class]="sortIcon('numeroAllegati')"></i></th>
+              <th>PDF</th>
+              <th class="sortable" (click)="sortBy('updatedAt')">Ultima modifica <i [class]="sortIcon('updatedAt')"></i></th>
+              <th class="text-end">Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cover of visibleCovers; track cover.codice) {
+              <tr>
+                <td><span class="badge bg-primary-subtle text-primary cover-code">{{ cover.codice }}</span></td>
+                <td class="fw-medium">{{ cover.nome }}</td>
+                <td class="text-center"><span class="badge bg-light text-body">{{ cover.numeroAllegati }}</span></td>
+                <td><span class="text-success"><i class="ri-file-pdf-2-line me-1"></i>{{ cover.pdfNome }}</span></td>
+                <td>{{ cover.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-end">
+                  <div class="hstack gap-2 justify-content-end">
+                    <button type="button" class="btn btn-sm btn-ghost-success" title="Scarica PDF" [disabled]="downloadingCode === cover.codice" (click)="downloadPdf(cover)">
+                      @if (downloadingCode === cover.codice) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="ri-download-2-line fs-16"></i> }
+                    </button>
+                    <button type="button" class="btn btn-sm btn-ghost-primary" title="Modifica e aggiungi allegati" (click)="openEdit(cover, coverModal)"><i class="ri-pencil-fill fs-16"></i></button>
+                    <button type="button" class="btn btn-sm btn-ghost-danger" title="Elimina" (click)="openDelete(cover, deleteModal)"><i class="ri-delete-bin-5-fill fs-16"></i></button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6">
+                <div class="empty-state text-center text-muted py-5">
+                  <i class="ri-file-paper-2-line display-5"></i>
+                  <p class="mt-3 mb-1 fw-medium">Nessuna copertina trovata</p>
+                  <small>{{ searchTerm ? 'Prova a modificare la ricerca.' : 'Crea la prima copertina per iniziare.' }}</small>
+                </div>
+              </td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (filteredCovers.length) {
+        <div class="row justify-content-md-between align-items-md-center mt-3">
+          <div class="col-sm-5 text-muted mb-2">Visualizzati {{ firstVisibleItem }}–{{ lastVisibleItem }} di {{ filteredCovers.length }}</div>
+          <div class="col-sm-7">
+            <ngb-pagination class="d-flex justify-content-sm-end" [collectionSize]="filteredCovers.length" [(page)]="page" [pageSize]="pageSize" [maxSize]="5" [rotate]="true" [boundaryLinks]="true"></ngb-pagination>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<ng-template #coverModal let-modal>
+  <div class="modal-header bg-light p-3">
+    <h5 class="modal-title">{{ editingCode ? 'Modifica copertina' : 'Nuova copertina' }}</h5>
+    <button type="button" class="btn-close" aria-label="Chiudi" [disabled]="saving" (click)="modal.dismiss('close')"></button>
+  </div>
+  <form [formGroup]="coverForm" (ngSubmit)="save()" autocomplete="off">
+    <div class="modal-body">
+      <div class="mb-3">
+        <label for="cover-code" class="form-label">Codice *</label>
+        <input id="cover-code" class="form-control cover-code-input" formControlName="codice" placeholder="es. cover-estate-2026" maxlength="80" [class.is-invalid]="coverForm.controls['codice'].touched && coverForm.controls['codice'].invalid">
+        <div class="form-text">{{ editingCode ? 'Il codice è univoco e non può essere modificato.' : 'Usa lettere minuscole, numeri, trattini o underscore.' }}</div>
+        <div class="invalid-feedback">Inserisci un codice valido.</div>
+      </div>
+      <div class="mb-3">
+        <label for="cover-name" class="form-label">Nome *</label>
+        <input id="cover-name" class="form-control" formControlName="nome" placeholder="Nome della copertina" maxlength="180" [class.is-invalid]="coverForm.controls['nome'].touched && coverForm.controls['nome'].invalid">
+        <div class="invalid-feedback">Il nome della copertina è obbligatorio.</div>
+      </div>
+      <div class="mb-3">
+        <label for="cover-pdf-name" class="form-label">Nome File PDF *</label>
+        <input id="cover-pdf-name" class="form-control cover-code-input" formControlName="nomeFilePdf" placeholder="es. cover-estate-2026.pdf" maxlength="180" (input)="markPdfNameEdited()" [class.is-invalid]="coverForm.controls['nomeFilePdf'].touched && coverForm.controls['nomeFilePdf'].invalid">
+        <div class="form-text">Deve terminare con .pdf. Il nome deve essere univoco.</div>
+        <div class="invalid-feedback">Inserisci un nome file valido con estensione .pdf.</div>
+      </div>
+      <div>
+        <label for="cover-files" class="form-label">File per la copertina</label>
+        <input id="cover-files" type="file" class="form-control" multiple (change)="selectFiles($event)">
+        <div class="form-text">Massimo 20 MB per file. I file saranno salvati nella cartella dedicata al codice.</div>
+        @if (selectedFiles.length) {
+          <div class="selected-files mt-2">
+            @for (file of selectedFiles; track file.name) { <span class="badge bg-light text-body me-1 mb-1">{{ file.name }}</span> }
+          </div>
+        }
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-light" [disabled]="saving" (click)="modal.dismiss('cancel')">Annulla</button>
+      <button type="submit" class="btn btn-success" [disabled]="saving">
+        @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        {{ editingCode ? 'Aggiorna' : 'Crea copertina' }}
+      </button>
+    </div>
+  </form>
+</ng-template>
+
+<ng-template #deleteModal let-modal>
+  <div class="modal-header"><button type="button" class="btn-close" aria-label="Chiudi" [disabled]="deleting" (click)="modal.dismiss('close')"></button></div>
+  <div class="modal-body text-center">
+    <div class="avatar-lg mx-auto mb-3"><span class="avatar-title rounded-circle bg-danger-subtle text-danger fs-1"><i class="ri-delete-bin-line"></i></span></div>
+    <h4>Eliminare la copertina?</h4>
+    <p class="text-muted mb-0">Saranno eliminati <strong>{{ deletingCover?.codice }}.json</strong>, il PDF e tutti gli allegati associati.</p>
+  </div>
+  <div class="modal-footer justify-content-center">
+    <button type="button" class="btn btn-light" [disabled]="deleting" (click)="modal.dismiss('cancel')">Annulla</button>
+    <button type="button" class="btn btn-danger" [disabled]="deleting" (click)="confirmDelete()">
+      @if (deleting) { <span class="spinner-border spinner-border-sm me-1"></span> } Elimina
+    </button>
+  </div>
+</ng-template>

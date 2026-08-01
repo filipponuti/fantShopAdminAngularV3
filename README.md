@@ -58,3 +58,6 @@ Apri un ticket Serverplan chiedendo di whitelistare il falso positivo (firma tip
 
 
 npm --prefix .\default run build -- --define "SITE_URL='https://www.filipponuti.it/agenti'"
+
+
+ng build --configuration production --base-href=/test/ --optimization=false --define "SITE_URL='https://www.filipponuti.it/agenti'"

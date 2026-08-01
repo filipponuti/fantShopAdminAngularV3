@@ -23,26 +23,40 @@ export const MENU: MenuItem[] = [
         label: 'MENUITEMS.FANT.CATEGORIES',
         link: '/fant-categorie',
         parentId: 10002
-      },
-      {
-        id: 10004,
-        label: 'MENUITEMS.FANT.CATALOGS',
-        link: '/fant-cataloghi',
-        parentId: 10002
       }
     ]
   },
   {
-    id: 10005,
+    id: 10004,
+    label: 'MENUITEMS.FANT.CATALOGS',
+    icon: 'ri-book-2-line',
+    isCollapsed: true,
+    subItems: [
+      {
+        id: 10005,
+        label: 'MENUITEMS.FANT.CATALOGS',
+        link: '/fant-cataloghi',
+        parentId: 10004
+      },
+      {
+        id: 10006,
+        label: 'MENUITEMS.FANT.COVERS',
+        link: '/fant-copertine',
+        parentId: 10004
+      }
+    ]
+  },
+  {
+    id: 10007,
     label: 'MENUITEMS.FANT.SETTINGS',
     icon: 'ri-settings-3-line',
     isCollapsed: true,
     subItems: [
       {
-        id: 10006,
+        id: 10008,
         label: 'MENUITEMS.FANT.AI',
         link: '/fant-ai-settings',
-        parentId: 10005
+        parentId: 10007
       }
     ]
   },

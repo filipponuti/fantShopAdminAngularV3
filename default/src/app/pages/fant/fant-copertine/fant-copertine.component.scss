@@ -1,0 +1,29 @@
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable i {
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.cover-code,
+.cover-code-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.cover-code {
+  font-size: 12px;
+  text-transform: none;
+}
+
+.empty-state {
+  min-height: 190px;
+}
+
+.selected-files {
+  max-height: 100px;
+  overflow-y: auto;
+}

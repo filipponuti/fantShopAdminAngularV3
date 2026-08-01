@@ -10,9 +10,10 @@ import { FantHomeComponent } from './fant-home/fant-home.component';
 import { FantCategorieComponent } from './fant-categorie/fant-categorie.component';
 import { FantCataloghiComponent } from './fant-cataloghi/fant-cataloghi.component';
 import { FantAiSettingsComponent } from './fant-ai-settings/fant-ai-settings.component';
+import { FantCopertineComponent } from './fant-copertine/fant-copertine.component';
 
 @NgModule({
-  declarations: [FantHomeComponent, FantCategorieComponent, FantCataloghiComponent, FantAiSettingsComponent],
+  declarations: [FantHomeComponent, FantCategorieComponent, FantCataloghiComponent, FantCopertineComponent, FantAiSettingsComponent],
   imports: [
     CommonModule,
     ReactiveFormsModule,

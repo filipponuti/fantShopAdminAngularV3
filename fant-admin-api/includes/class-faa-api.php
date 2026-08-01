@@ -58,6 +58,28 @@ final class Fant_Admin_API_V4_REST {
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_catalog' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_catalog' );
 
+		register_rest_route(
+			self::API_NAMESPACE,
+			'/covers',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'covers' ),
+					'permission_callback' => array( __CLASS__, 'authorized' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'create_cover' ),
+					'permission_callback' => array( __CLASS__, 'authorized' ),
+				),
+			)
+		);
+		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)', WP_REST_Server::READABLE, 'cover' );
+		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_cover' );
+		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_cover' );
+		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)/attachments', WP_REST_Server::CREATABLE, 'upload_cover_attachments' );
+		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)/pdf', WP_REST_Server::READABLE, 'cover_pdf' );
+
 		self::route( '/settings/ai', WP_REST_Server::READABLE, 'ai_settings' );
 		self::route( '/settings/ai', 'PUT', 'update_ai_settings' );
 	}
@@ -410,6 +432,54 @@ final class Fant_Admin_API_V4_REST {
 		}
 
 		return new WP_REST_Response( null, 204 );
+	}
+
+	public static function covers() {
+		return rest_ensure_response( Fant_Admin_API_V4_Covers::all() );
+	}
+
+	public static function cover( WP_REST_Request $request ) {
+		return rest_ensure_response( Fant_Admin_API_V4_Covers::find( (string) $request['coverCode'] ) );
+	}
+
+	public static function create_cover( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Covers::create(
+			(string) $request->get_param( 'codice' ),
+			(string) $request->get_param( 'nome' ),
+			(string) $request->get_param( 'nomeFilePdf' )
+		);
+		return is_wp_error( $result ) ? $result : new WP_REST_Response( $result, 201 );
+	}
+
+	public static function update_cover( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		$code   = strtolower( (string) $request['coverCode'] );
+		if ( isset( $params['codice'] ) && strtolower( trim( (string) $params['codice'] ) ) !== $code ) {
+			return self::error( 'cover_code_immutable', 'Il codice della copertina non può essere modificato.', 409 );
+		}
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Covers::update(
+				$code,
+				(string) ( $params['nome'] ?? '' ),
+				(string) ( $params['nomeFilePdf'] ?? '' )
+			)
+		);
+	}
+
+	public static function delete_cover( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Covers::delete( (string) $request['coverCode'] );
+		return is_wp_error( $result ) ? $result : new WP_REST_Response( null, 204 );
+	}
+
+	public static function upload_cover_attachments( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Covers::upload_attachments( (string) $request['coverCode'], $request->get_file_params() );
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function cover_pdf( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Covers::pdf( (string) $request['coverCode'] );
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
 
 	public static function ai_settings(): WP_REST_Response {
