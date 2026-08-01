@@ -37,9 +37,6 @@ const routes: Routes = [
     {
       path: 'tickets', loadChildren: () => import('./tickets/tickets.module').then(m => m.TicketsModule)
     },
-    {
-      path: 'pages', loadChildren: () => import('./extrapages/extraspages.module').then(m => m.ExtraspagesModule)
-    },
     { path: 'ui', loadChildren: () => import('./ui/ui.module').then(m => m.UiModule) },
     {
       path: 'advance-ui', loadChildren: () => import('./advance-ui/advance-ui.module').then(m => m.AdvanceUiModule)
@@ -51,13 +48,7 @@ const routes: Routes = [
       path: 'tables', loadChildren: () => import('./tables/tables.module').then(m => m.TablesModule)
     },
     {
-      path: 'charts', loadChildren: () => import('./charts/charts.module').then(m => m.ChartsModule)
-    },
-    {
       path: 'icons', loadChildren: () => import('./icons/icons.module').then(m => m.IconsModule)
-    },
-    {
-      path: 'maps', loadChildren: () => import('./maps/maps.module').then(m => m.MapsModule)
     },
     {
       path: 'marletplace', loadChildren: () => import('./nft-marketplace/nft-marketplace.module').then(m => m.NftMarketplaceModule)

@@ -8,7 +8,6 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
 import { LayoutsModule } from "./layouts/layouts.module";
-import { PagesModule } from "./pages/pages.module";
 
 // Auth
 import { HttpClient, HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
@@ -77,7 +76,6 @@ export function createTranslateLoader(http: HttpClient): any {
             ApplicationEffects,
             ApikeyEffects
         ]),
-        PagesModule,
         NgPipesModule], providers: [
           provideFlatpickrDefaults(),
               importProvidersFrom(

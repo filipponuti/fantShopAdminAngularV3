@@ -18,7 +18,8 @@
         "CRYPTO": "加密货币",
         "PROJECTS": "项目",
         "NFT": "NFT",
-        "JOB": "工作"
+        "JOB": "工作",
+        "BLOG": "博客"
       }
     },
     "APPS": {
@@ -102,9 +103,6 @@
         "HOVERED": "悬停"
       }
     },
-    "PAGES": {
-      "TEXT": "页面"
-    },
     "AUTHENTICATION": {
       "TEXT": "验证",
       "LIST": {
@@ -124,38 +122,6 @@
         "404ALT": "第404章",
         "500": "500",
         "OFFLINE": "离线页面"
-      }
-    },
-    "PAGES": {
-      "TEXT": "页面",
-      "LIST": {
-        "STARTER": "起动机",
-        "PROFILE": "轮廓",
-        "SIMPLEPAGE": "简单页面",
-        "SETTINGS": "设置",
-        "TEAM": "团队",
-        "TIMELINE": "时间线",
-        "FAQS": "常见问题",
-        "PRICING": "价钱",
-        "GALLERY": "画廊",
-        "MAINTENANCE": "维护",
-        "COMINGSOON": "快来了",
-        "SITEMAP": "网站地图",
-        "SEARCHRESULTS": "搜索结果",
-        "PRIVACYPOLICY": "隐私政策",
-        "TERMS&CONDITIONS": "条款和条件",
-        "BLOG": "博客",
-        "BLOGLIST": "列表视图",
-        "BLOGOVERVIEW": "概述",
-        "BLOGGRID": "网格视图"
-      }
-    },
-    "LANDING": {
-      "TEXT": "降落",
-      "LIST": {
-        "ONEPAGE": "一页",
-        "NFTLANDING": "NFT 登陆",
-        "JOB": "工作"
       }
     },
     "COMPONENTS": {
@@ -234,33 +200,6 @@
         "DATATABLES": "數據表"
       }
     },
-    "CHARTS": {
-      "TEXT": "图表",
-      "LIST": {
-        "APEXCHARTS": "顶点图",
-        "LINE": "线",
-        "AREA": "区域",
-        "COLUMN": "柱子",
-        "BAR": "酒吧",
-        "MIXED": "混合",
-        "TIMELINE": "时间线",
-        "RANGEAREA": "范围面积",
-        "FUNNEL": "漏斗",
-        "SLOPE": "坡度",
-        "CANDLSTICK": "烛台",
-        "BOXPLOT": "箱形图",
-        "BUBBLE": "气泡",
-        "SCATTER": "分散",
-        "HEATMAP": "热图",
-        "TREEMAP": "树状图",
-        "PIE": "馅饼",
-        "RADIALBAR": "径向杆",
-        "RADAR": "雷达",
-        "POLARAREA": "极地",
-        "CHARTJS": "图表",
-        "ECHARTS": "图表"
-      }
-    },
     "ICONS": {
       "TEXT": "图标",
       "LIST": {
@@ -270,14 +209,6 @@
         "LINEAWESOME": "线真棒",
         "FEATHER": "羽毛",
         "CRYPTOSVG": "加密 SVG"
-      }
-    },
-    "MAPS": {
-      "TEXT": "地图",
-      "LIST": {
-        "GOOGLE": "谷歌",
-        "VECTOR": "向量",
-        "LEAFLET": "传单"
       }
     },
     "MULTILEVEL": {

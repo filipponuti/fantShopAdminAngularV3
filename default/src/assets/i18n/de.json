@@ -18,7 +18,8 @@
         "CRYPTO": "Krypto",
         "PROJECTS": "Projekte",
         "NFT": "NFT",
-        "JOB": "ARBEIT"
+        "JOB": "ARBEIT",
+        "BLOG": "Blog"
       }
     },
     "APPS": {
@@ -102,9 +103,6 @@
         "HOVERED": "Schwebte"
       }
     },
-    "PAGES": {
-      "TEXT": "Seiten"
-    },
     "AUTHENTICATION": {
       "TEXT": "Authentifizierung",
       "LIST": {
@@ -124,38 +122,6 @@
         "404ALT": "404 Alt",
         "500": "500",
         "OFFLINE": "Offline-Seite"
-      }
-    },
-    "PAGES": {
-      "TEXT": "Seiten",
-      "LIST": {
-        "STARTER": "Anlasser",
-        "PROFILE": "Profil",
-        "SIMPLEPAGE": "Einfache Seite",
-        "SETTINGS": "Einstellungen",
-        "TEAM": "Mannschaft",
-        "TIMELINE": "Zeitleiste",
-        "FAQS": "Häufig gestellte Fragen",
-        "PRICING": "Preisgestaltung",
-        "GALLERY": "Galerie",
-        "MAINTENANCE": "Instandhaltung",
-        "COMINGSOON": "Kommt bald",
-        "SITEMAP": "Seitenverzeichnis",
-        "SEARCHRESULTS": "Suchergebnisse",
-        "PRIVACYPOLICY": "DATENSCHUTZ-BESTIMMUNGEN",
-        "TERMS&CONDITIONS": "TERMS & AMP; BEDINGUNGEN",
-        "BLOG": "Blog",
-        "BLOGLIST": "Listenansicht",
-        "BLOGOVERVIEW": "Überblick",
-        "BLOGGRID": "Rasteransicht"
-      }
-    },
-    "LANDING": {
-      "TEXT": "Landung",
-      "LIST": {
-        "ONEPAGE": "Eine Seite",
-        "NFTLANDING": "NFT-Landung",
-        "JOB": "ARBEIT"
       }
     },
     "COMPONENTS": {
@@ -234,33 +200,6 @@
         "DATATABLES": "Datentabellen"
       }
     },
-    "CHARTS": {
-      "TEXT": "Diagramme",
-      "LIST": {
-        "APEXCHARTS": "Apexcharts",
-        "LINE": "Linie",
-        "AREA": "Bereich",
-        "COLUMN": "Spalte",
-        "BAR": "Bar",
-        "MIXED": "Gemischt",
-        "TIMELINE": "Zeitleiste",
-        "RANGEAREA": "Reichweitenbereich",
-        "FUNNEL": "Trichter",
-        "SLOPE": "Neigung",
-        "CANDLSTICK": "Kerzenhalter",
-        "BOXPLOT": "Box-Plot",
-        "BUBBLE": "Blase",
-        "SCATTER": "Streuen",
-        "HEATMAP": "Heatmap",
-        "TREEMAP": "Baumkarte",
-        "PIE": "Kuchen",
-        "RADIALBAR": "Radialbar",
-        "RADAR": "Radar",
-        "POLARAREA": "Polargebiet",
-        "CHARTJS": "Chartjs",
-        "ECHARTS": "Diagramme"
-      }
-    },
     "ICONS": {
       "TEXT": "Symbole",
       "LIST": {
@@ -270,14 +209,6 @@
         "LINEAWESOME": "Linie Super",
         "FEATHER": "Feder",
         "CRYPTOSVG": "Krypto-SVG"
-      }
-    },
-    "MAPS": {
-      "TEXT": "Karten",
-      "LIST": {
-        "GOOGLE": "Google",
-        "VECTOR": "Vektor",
-        "LEAFLET": "Flugblatt"
       }
     },
     "MULTILEVEL": {

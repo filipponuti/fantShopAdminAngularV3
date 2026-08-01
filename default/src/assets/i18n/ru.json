@@ -18,7 +18,8 @@
         "CRYPTO": "Крипто",
         "PROJECTS": "Проекты",
         "NFT": "NFT",
-        "JOB": "Работа"
+        "JOB": "Работа",
+        "BLOG": "Блог"
       }
     },
     "APPS": {
@@ -102,9 +103,6 @@
         "HOVERED": "Парит"
       }
     },
-    "PAGES": {
-      "TEXT": "Страницы"
-    },
     "AUTHENTICATION": {
       "TEXT": "Аутентификация",
       "LIST": {
@@ -124,38 +122,6 @@
         "404ALT": "404 Альт.",
         "500": "500",
         "OFFLINE": "Офлайн-страница"
-      }
-    },
-    "PAGES": {
-      "TEXT": "Страницы",
-      "LIST": {
-        "STARTER": "Стартер",
-        "PROFILE": "Профиль",
-        "SIMPLEPAGE": "Простая страница",
-        "SETTINGS": "Настройки",
-        "TEAM": "Команда",
-        "TIMELINE": "Лента новостей",
-        "FAQS": "Часто задаваемые вопросы",
-        "PRICING": "Цены",
-        "GALLERY": "Галерея",
-        "MAINTENANCE": "Обслуживание",
-        "COMINGSOON": "Вскоре",
-        "SITEMAP": "Карта сайта",
-        "SEARCHRESULTS": "результаты поиска",
-        "PRIVACYPOLICY": "Политика конфиденциальности",
-        "TERMS&CONDITIONS": "Срок и условия",
-        "BLOG": "Блог",
-        "BLOGLIST": "Просмотр списка",
-        "BLOGOVERVIEW": "Обзор",
-        "BLOGGRID": "Вид сетки"
-      }
-    },
-    "LANDING": {
-      "TEXT": "Посадка",
-      "LIST": {
-        "ONEPAGE": "Одна страница",
-        "NFTLANDING": "Посадка NFT",
-        "JOB": "Работа"
       }
     },
     "COMPONENTS": {
@@ -234,33 +200,6 @@
         "DATATABLES": "Таблицы данных"
       }
     },
-    "CHARTS": {
-      "TEXT": "Графики",
-      "LIST": {
-        "APEXCHARTS": "Апексчарты",
-        "LINE": "Линия",
-        "AREA": "Площадь",
-        "COLUMN": "Столбец",
-        "BAR": "Бар",
-        "MIXED": "Смешанный",
-        "TIMELINE": "Лента новостей",
-        "RANGEAREA": "Область диапазона",
-        "FUNNEL": "Воронка",
-        "SLOPE": "Уклон",
-        "CANDLSTICK": "Подсвечник",
-        "BOXPLOT": "Блочная диаграмма",
-        "BUBBLE": "Пузырь",
-        "SCATTER": "Разброс",
-        "HEATMAP": "Тепловая карта",
-        "TREEMAP": "Древовидная карта",
-        "PIE": "пирог",
-        "RADIALBAR": "Радиальная полоса",
-        "RADAR": "Радар",
-        "POLARAREA": "Полярный район",
-        "CHARTJS": "Графики",
-        "ECHARTS": "электронные карты"
-      }
-    },
     "ICONS": {
       "TEXT": "Иконки",
       "LIST": {
@@ -270,14 +209,6 @@
         "LINEAWESOME": "Линия Потрясающая",
         "FEATHER": "Перо",
         "CRYPTOSVG": "Крипто SVG"
-      }
-    },
-    "MAPS": {
-      "TEXT": "Карты",
-      "LIST": {
-        "GOOGLE": "Google",
-        "VECTOR": "Вектор",
-        "LEAFLET": "Листовка"
       }
     },
     "MULTILEVEL": {

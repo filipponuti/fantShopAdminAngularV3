@@ -18,7 +18,8 @@
         "CRYPTO": "Crypto",
         "PROJECTS": "Projets",
         "NFT": "NFT",
-        "JOB": "TRAVAIL"
+        "JOB": "TRAVAIL",
+        "BLOG": "Blog"
       }
     },
     "APPS": {
@@ -102,9 +103,6 @@
         "HOVERED": "Survolé"
       }
     },
-    "PAGES": {
-      "TEXT": "pages"
-    },
     "AUTHENTICATION": {
       "TEXT": "Authentification",
       "LIST": {
@@ -124,38 +122,6 @@
         "404ALT": "404 Autre",
         "500": "500",
         "OFFLINE": "Hors ligne"
-      }
-    },
-    "PAGES": {
-      "TEXT": "pages",
-      "LIST": {
-        "STARTER": "Entrée",
-        "PROFILE": "Profil",
-        "SIMPLEPAGE": "Page simplifiée",
-        "SETTINGS": "Réglages",
-        "TEAM": "Équipe",
-        "TIMELINE": "Chronologie",
-        "FAQS": "FAQ",
-        "PRICING": "Tarification",
-        "GALLERY": "Galerie",
-        "MAINTENANCE": "Maintenance",
-        "COMINGSOON": "À venir",
-        "SITEMAP": "Plan du site",
-        "SEARCHRESULTS": "Résultats de recherche",
-        "PRIVACYPOLICY": "Politique de confidentialité",
-        "TERMS&CONDITIONS": "Conditions générales",
-        "BLOG": "Blog",
-        "BLOGLIST": "Vue en liste",
-        "BLOGOVERVIEW": "Aperçu",
-        "BLOGGRID": "Vue en grille"
-      }
-    },
-    "LANDING": {
-      "TEXT": "Un atterrissage",
-      "LIST": {
-        "ONEPAGE": "Une page",
-        "NFTLANDING": "Atterrissage NFT",
-        "JOB": "TRAVAIL"
       }
     },
     "COMPONENTS": {
@@ -234,33 +200,6 @@
         "DATATABLES": "Tableaux de données"
       }
     },
-    "CHARTS": {
-      "TEXT": "Graphiques",
-      "LIST": {
-        "APEXCHARTS": "Apexchart",
-        "LINE": "Ligne",
-        "AREA": "Région",
-        "COLUMN": "Colonne",
-        "BAR": "Bar",
-        "MIXED": "Mixte",
-        "TIMELINE": "Chronologie",
-        "RANGEAREA": "Zone de portée",
-        "FUNNEL": "Entonnoir",
-        "SLOPE": "Pente",
-        "CANDLSTICK": "Chandelier",
-        "BOXPLOT": "Boîte à moustaches",
-        "BUBBLE": "Bulle",
-        "SCATTER": "Dispersion",
-        "HEATMAP": "Carte de chaleur",
-        "TREEMAP": "Treemap",
-        "PIE": "Tarte",
-        "RADIALBAR": "Barre radiale",
-        "RADAR": "Radar",
-        "POLARAREA": "Zone polaire",
-        "CHARTJS": "Graphiques",
-        "ECHARTS": "Cartes électroniques"
-      }
-    },
     "ICONS": {
       "TEXT": "Icônes",
       "LIST": {
@@ -270,14 +209,6 @@
         "LINEAWESOME": "Ligne Génial",
         "FEATHER": "La plume",
         "CRYPTOSVG": "Crypto SVG"
-      }
-    },
-    "MAPS": {
-      "TEXT": "Plans",
-      "LIST": {
-        "GOOGLE": "Google",
-        "VECTOR": "Vecteur",
-        "LEAFLET": "Brochure"
       }
     },
     "MULTILEVEL": {

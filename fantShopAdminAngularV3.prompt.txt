@@ -150,3 +150,14 @@ dammi il comando.
 
 ---------------
 
+Voglio ridurre le dimensioni del progetto /default.
+Sono partito da un progetto gia fatto e molte pagine non mi servono.
+Voglio eliminare le seguenti voci di menu dalla sidebar e le rispettive pagine collegate e quelle relative alle sottovoci di menu:
+ - Mappe
+ - Grafici
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+---------------
+

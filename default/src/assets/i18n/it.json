@@ -24,7 +24,8 @@
         "CRYPTO": "Cripto",
         "PROJECTS": "Progetti",
         "NFT": "NFT",
-        "JOB": "Lavoro"
+        "JOB": "Lavoro",
+        "BLOG": "Blog"
       }
     },
     "APPS": {
@@ -108,9 +109,6 @@
         "HOVERED": "Aleggiava"
       }
     },
-    "PAGES": {
-      "TEXT": "Pagine"
-    },
     "AUTHENTICATION": {
       "TEXT": "Autenticazione",
       "LIST": {
@@ -130,38 +128,6 @@
         "404ALT": "404 Alt",
         "500": "500",
         "OFFLINE": "Pagina offline"
-      }
-    },
-    "PAGES": {
-      "TEXT": "Pagine",
-      "LIST": {
-        "STARTER": "Antipasto",
-        "PROFILE": "Profilo",
-        "SIMPLEPAGE": "Pagina semplice",
-        "SETTINGS": "Impostazioni",
-        "TEAM": "Squadra",
-        "TIMELINE": "Sequenza temporale",
-        "FAQS": "Domande frequenti",
-        "PRICING": "Prezzo",
-        "GALLERY": "Galleria",
-        "MAINTENANCE": "Manutenzione",
-        "COMINGSOON": "Prossimamente",
-        "SITEMAP": "Mappa del sito",
-        "SEARCHRESULTS": "risultati di ricerca",
-        "PRIVACYPOLICY": "politica sulla riservatezza",
-        "TERMS&CONDITIONS": "Termini e condizioni",
-        "BLOG": "Blog",
-        "BLOGLIST": "Vista elenco",
-        "BLOGOVERVIEW": "Panoramica",
-        "BLOGGRID": "Vista a griglia"
-      }
-    },
-    "LANDING": {
-      "TEXT": "Approdo",
-      "LIST": {
-        "ONEPAGE": "Una pagina",
-        "NFTLANDING": "Atterraggio NFT",
-        "JOB": "Lavoro"
       }
     },
     "COMPONENTS": {
@@ -240,33 +206,6 @@
         "DATATABLES": "Datatables"
       }
     },
-    "CHARTS": {
-      "TEXT": "Grafici",
-      "LIST": {
-        "APEXCHARTS": "Apexchart",
-        "LINE": "Linea",
-        "AREA": "La zona",
-        "COLUMN": "Colonna",
-        "BAR": "Sbarra",
-        "MIXED": "Misto",
-        "TIMELINE": "Sequenza temporale",
-        "RANGEAREA": "Area di portata",
-        "FUNNEL": "Imbuto",
-        "SLOPE": "Pendenza",
-        "CANDLSTICK": "Candeliere",
-        "BOXPLOT": "Boxplot",
-        "BUBBLE": "Bolla",
-        "SCATTER": "Dispersione",
-        "HEATMAP": "Mappa di calore",
-        "TREEMAP": "Mappa ad albero",
-        "PIE": "Torta",
-        "RADIALBAR": "barra radiale",
-        "RADAR": "Radar",
-        "POLARAREA": "Zona Polare",
-        "CHARTJS": "Chartjs",
-        "ECHARTS": "Carte"
-      }
-    },
     "ICONS": {
       "TEXT": "Icone",
       "LIST": {
@@ -276,14 +215,6 @@
         "LINEAWESOME": "Linea fantastica",
         "FEATHER": "Piuma",
         "CRYPTOSVG": "Cripto SVG"
-      }
-    },
-    "MAPS": {
-      "TEXT": "Mappe",
-      "LIST": {
-        "GOOGLE": "Google",
-        "VECTOR": "Vettore",
-        "LEAFLET": "Volantino"
       }
     },
     "MULTILEVEL": {

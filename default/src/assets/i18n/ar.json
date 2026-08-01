@@ -18,7 +18,8 @@
         "CRYPTO": "تشفير",
         "PROJECTS": "المشاريع",
         "NFT": "NFT",
-        "JOB": "مهنة"
+        "JOB": "مهنة",
+        "BLOG": "مدونة"
       }
     },
     "APPS": {
@@ -102,9 +103,6 @@
         "HOVERED": "حلق"
       }
     },
-    "PAGES": {
-      "TEXT": "الصفحات"
-    },
     "AUTHENTICATION": {
       "TEXT": "المصادقة",
       "LIST": {
@@ -124,38 +122,6 @@
         "404ALT": "404 بديل",
         "500": "500",
         "OFFLINE": "الصفحة غير المتصلة"
-      }
-    },
-    "PAGES": {
-      "TEXT": "الصفحات",
-      "LIST": {
-        "STARTER": "بداية",
-        "PROFILE": "الملف الشخصي",
-        "SIMPLEPAGE": "صفحة بسيطة",
-        "SETTINGS": "إعدادات",
-        "TEAM": "فريق",
-        "TIMELINE": "الجدول الزمني",
-        "FAQS": "أسئلة وأجوبة",
-        "PRICING": "التسعير",
-        "GALLERY": "صالة عرض",
-        "MAINTENANCE": "اعمال صيانة",
-        "COMINGSOON": "قريبا",
-        "SITEMAP": "خريطة الموقع",
-        "SEARCHRESULTS": "نتائج البحث",
-        "PRIVACYPOLICY": "سياسة الخصوصية",
-        "TERMS&CONDITIONS": "الشروط والأحكام",
-        "BLOG": "مدونة",
-        "BLOGLIST": "عرض القائمة",
-        "BLOGOVERVIEW": "نظرة عامة",
-        "BLOGGRID": "عرض الشبكة"
-      }
-    },
-    "LANDING": {
-      "TEXT": "الهبوط",
-      "LIST": {
-        "ONEPAGE": "صفحة واحدة",
-        "NFTLANDING": "NFT الهبوط",
-        "JOB": "مهنة"
       }
     },
     "COMPONENTS": {
@@ -233,33 +199,6 @@
         "DATATABLES": "جداول البيانات"
       }
     },
-    "CHARTS": {
-      "TEXT": "الرسوم البيانية",
-      "LIST": {
-        "APEXCHARTS": "أبكسشارتس",
-        "LINE": "خط",
-        "AREA": "منطقة",
-        "COLUMN": "عمودي",
-        "BAR": "شريط",
-        "MIXED": "مختلط",
-        "TIMELINE": "الجدول الزمني",
-        "RANGEAREA": "منطقة النطاق",
-        "FUNNEL": "قمع",
-        "SLOPE": "ميل",
-        "CANDLSTICK": "شمعدان",
-        "BOXPLOT": "مربع مؤامرة",
-        "BUBBLE": "فقاعة",
-        "SCATTER": "مبعثر",
-        "HEATMAP": "خريطة الحرارة",
-        "TREEMAP": "خريطة شجرة",
-        "PIE": "فطيرة",
-        "RADIALBAR": "شعاعي",
-        "RADAR": "رادار",
-        "POLARAREA": "المنطقة القطبية",
-        "CHARTJS": "تشارتجس",
-        "ECHARTS": "الصدى"
-      }
-    },
     "ICONS": {
       "TEXT": "أيقونات",
       "LIST": {
@@ -269,14 +208,6 @@
         "LINEAWESOME": "خط رائع",
         "FEATHER": "ريشة",
         "CRYPTOSVG": "تشفير SVG"
-      }
-    },
-    "MAPS": {
-      "TEXT": "خرائط",
-      "LIST": {
-        "GOOGLE": "جوجل",
-        "VECTOR": "المتجه",
-        "LEAFLET": "منشور"
       }
     },
     "MULTILEVEL": {

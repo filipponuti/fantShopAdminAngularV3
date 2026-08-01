@@ -24,7 +24,8 @@
         "CRYPTO": "Crypto",
         "PROJECTS": "Projects",
         "NFT": "NFT",
-        "JOB": "Job"
+        "JOB": "Job",
+        "BLOG": "Blog"
       }
     },
     "APPS": {
@@ -108,9 +109,6 @@
         "HOVERED": "Hovered"
       }
     },
-    "PAGES": {
-      "TEXT": "Pages"
-    },
     "AUTHENTICATION": {
       "TEXT": "Authentication",
       "LIST": {
@@ -130,38 +128,6 @@
         "404ALT": "404 Alt",
         "500": "500",
         "OFFLINE": "Offline Page"
-      }
-    },
-    "PAGES": {
-      "TEXT": "Pages",
-      "LIST": {
-        "STARTER": "Starter",
-        "PROFILE": "Profile",
-        "SIMPLEPAGE": "Simple Page",
-        "SETTINGS": "Settings",
-        "TEAM": "Team",
-        "TIMELINE": "Timeline",
-        "FAQS": "FAQs",
-        "PRICING": "Pricing",
-        "GALLERY": "Gallery",
-        "MAINTENANCE": "Maintenance",
-        "COMINGSOON": "Coming Soon",
-        "SITEMAP": "Sitemap",
-        "SEARCHRESULTS": "Search Results",
-        "PRIVACYPOLICY": "Privacy Policy",
-        "TERMS&CONDITIONS": "Term & Conditions",
-        "BLOG": "Blog",
-        "BLOGLIST": "List View",
-        "BLOGOVERVIEW": "Overview",
-        "BLOGGRID": "Grid View"
-      }
-    },
-    "LANDING": {
-      "TEXT": "Landing",
-      "LIST": {
-        "ONEPAGE": "One Page",
-        "NFTLANDING": "NFT Landing",
-        "JOB": "Job"
       }
     },
     "COMPONENTS": {
@@ -239,33 +205,6 @@
         "DATATABLES": "Datatables"
       }
     },
-    "CHARTS": {
-      "TEXT": "Charts",
-      "LIST": {
-        "APEXCHARTS": "Apexcharts",
-        "LINE": "Line",
-        "AREA": "Area",
-        "COLUMN": "Column",
-        "BAR": "Bar",
-        "MIXED": "Mixed",
-        "TIMELINE": "Timeline",
-        "RANGEAREA": "Range Area",
-        "FUNNEL": "Funnel",
-        "SLOPE": "Slope",
-        "CANDLSTICK": "Candlstick",
-        "BOXPLOT": "Boxplot",
-        "BUBBLE": "Bubble",
-        "SCATTER": "Scatter",
-        "HEATMAP": "Heatmap",
-        "TREEMAP": "Treemap",
-        "PIE": "Pie",
-        "RADIALBAR": "Radialbar",
-        "RADAR": "Radar",
-        "POLARAREA": "Polar Area",
-        "CHARTJS": "Chartjs",
-        "ECHARTS": "Echarts"
-      }
-    },
     "ICONS": {
       "TEXT": "Icons",
       "LIST": {
@@ -275,14 +214,6 @@
         "LINEAWESOME": "Line Awesome",
         "FEATHER": "Feather",
         "CRYPTOSVG": "Crypto SVG"
-      }
-    },
-    "MAPS": {
-      "TEXT": "Maps",
-      "LIST": {
-        "GOOGLE": "Google",
-        "VECTOR": "Vector",
-        "LEAFLET": "Leaflet"
       }
     },
     "MULTILEVEL": {

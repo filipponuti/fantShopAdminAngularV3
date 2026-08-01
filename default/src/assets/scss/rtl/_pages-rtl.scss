@@ -614,22 +614,6 @@
     }
 }
 
-//landing page
-.process-card {
-    .process-arrow-img {
-        left: auto;
-        right: 75%;
-        transform: scaleX(-1);
-    }
-}
-
-.icon-effect {
-    &::before {
-        left: auto;
-        right: 0;
-    }
-}
-
 .auth-pass-inputgroup{
     input {
         padding-right: $input-padding-x !important;

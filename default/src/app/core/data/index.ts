@@ -3,7 +3,6 @@ import { application } from "./application";
 import { candidatelist } from "./candidateList";
 import { cartData } from "./cart";
 import { jobcategories } from "./category";
-import { lineAreaChart, lineBarChart, pieChart, donutChart, polarChart, radarChart } from "./chartjs";
 import { groupData, chatData, MessagesData, contactData } from "./chat";
 import { companieslist } from "./companiesList";
 import { Contacts, Companies, deals, Leads } from "./crm";
@@ -22,18 +21,14 @@ import { joblist, jobgrid } from "./jobList";
 import { tasks } from "./kanban";
 import { icons } from "./materialIcon";
 import { Orders } from "./order";
-import { MonthlyPlan, YearlyPlan, pricingPlan, SimplePlan } from "./pricing";
 import { Products } from "./product";
 import { projectListWidgets } from "./project";
 import { projectDocument, ProjectTeam } from "./project_overview";
-import { projectList, document } from "./projectList";
 import { nftwalletData, collectionData, creatorsData, creatorsListData, exploreData, marketplaceData, tradingData, recentMarketData, popularData, rankingData } from "./nft";
 import { remixicons } from "./remixIcon";
-import { swiper, gallery, news, video } from "./search";
 import { BitcoinsellerChart, MicroChart, NestaChart, iTestChart, MetaChart, DigitechChart, SyntyceChart, ZoeticChart, sellerDetals } from "./seller";
 import { sellerDetail } from "./sellerDetail";
 import { COUNTRIES, AssignedData } from "./taskList";
-import { Team } from "./team";
 import { ticketList } from "./ticketList";
 import { todoList, todoAssigned, todoProject } from "./todoList";
 import { tileBoxs1, tileBoxs2, tileBoxs3, tileBoxs4, otherWidgets, widgetsActivities, widgetsTasks, tileBoxs5, hotproducts, candidate, bank } from "./widget";
@@ -47,7 +42,6 @@ export {
     candidatelist,
     cartData,
     jobcategories,
-    lineAreaChart, lineBarChart, pieChart, donutChart, polarChart, radarChart,
     groupData, chatData, MessagesData, contactData,
     collectionData,
     companieslist,
@@ -73,18 +67,14 @@ export {
     icons,
     nftwalletData,
     Orders,
-    MonthlyPlan, YearlyPlan, pricingPlan, SimplePlan,
     Products,
     projectListWidgets,
     projectDocument, ProjectTeam,
-    projectList, document,
     rankingData,
     remixicons,
-    swiper, gallery, news, video,
     BitcoinsellerChart, MicroChart, NestaChart, iTestChart, MetaChart, DigitechChart, SyntyceChart, ZoeticChart, sellerDetals,
     sellerDetail,
     COUNTRIES, AssignedData,
-    Team,
     ticketList,
     todoList, todoAssigned, todoProject,
     tileBoxs1, tileBoxs2, tileBoxs3, tileBoxs4, otherWidgets, widgetsActivities, widgetsTasks, tileBoxs5, hotproducts, candidate, bank,
