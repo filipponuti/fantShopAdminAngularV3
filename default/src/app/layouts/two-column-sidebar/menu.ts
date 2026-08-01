@@ -1,6 +1,6 @@
 import { MenuItem } from './menu.model';
 
-export const MENU: MenuItem[] = [
+const MENU_ITEMS: MenuItem[] = [
   {
     id: 1,
     label: 'MENUITEMS.MENU.TEXT',
@@ -515,208 +515,6 @@ export const MENU: MenuItem[] = [
     ]
   },
   {
-    id: 54,
-    label: 'MENUITEMS.AUTHENTICATION.TEXT',
-    isTitle: true
-  },
-  {
-    id: 55,
-    label: 'MENUITEMS.AUTHENTICATION.TEXT',
-    collapseid: 'sidebarAuth',
-    icon: 'ri-account-circle-line',
-    subItems: [
-      {
-        id: 56,
-        label: 'MENUITEMS.AUTHENTICATION.LIST.SIGNIN',
-        parentId: 49,
-        subItems: [
-          {
-            id: 57,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.BASIC',
-            link: '/auth/signin/basic',
-            parentId: 56
-          },
-          {
-            id: 58,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.COVER',
-            link: '/auth/signin/cover',
-            parentId: 56
-          },
-        ]
-      },
-      {
-        id: 59,
-        label: 'MENUITEMS.AUTHENTICATION.LIST.SIGNUP',
-        parentId: 49,
-        subItems: [
-          {
-            id: 60,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.BASIC',
-            link: '/auth/signup/basic',
-            parentId: 59
-          },
-          {
-            id: 61,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.COVER',
-            link: '/auth/signup/cover',
-            parentId: 59
-          },
-        ]
-      },
-      {
-        id: 62,
-        label: 'MENUITEMS.AUTHENTICATION.LIST.PASSWORDRESET',
-        parentId: 49,
-        subItems: [
-          {
-            id: 63,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.BASIC',
-            link: '/auth/pass-reset/basic',
-            parentId: 62
-          },
-          {
-            id: 64,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.COVER',
-            link: '/auth/pass-reset/cover',
-            parentId: 62
-          },
-        ]
-      },
-      {
-        id: 62,
-        label: 'MENUITEMS.AUTHENTICATION.LIST.PASSWORDCREATE',
-        parentId: 49,
-        subItems: [
-          {
-            id: 63,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.BASIC',
-            link: '/auth/pass-create/basic',
-            parentId: 62
-          },
-          {
-            id: 64,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.COVER',
-            link: '/auth/pass-create/cover',
-            parentId: 62
-          },
-        ]
-      },
-      {
-        id: 65,
-        label: 'MENUITEMS.AUTHENTICATION.LIST.LOCKSCREEN',
-        parentId: 49,
-        subItems: [
-          {
-            id: 66,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.BASIC',
-            link: '/auth/lockscreen/basic',
-            parentId: 65
-          },
-          {
-            id: 67,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.COVER',
-            link: '/auth/lockscreen/cover',
-            parentId: 65
-          },
-        ]
-      },
-      {
-        id: 68,
-        label: 'MENUITEMS.AUTHENTICATION.LIST.LOGOUT',
-        parentId: 49,
-        subItems: [
-          {
-            id: 69,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.BASIC',
-            link: '/auth/logout/basic',
-            parentId: 68
-          },
-          {
-            id: 70,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.COVER',
-            link: '/auth/logout/cover',
-            parentId: 68
-          },
-        ]
-      },
-      {
-        id: 71,
-        label: 'MENUITEMS.AUTHENTICATION.LIST.SUCCESSMESSAGE',
-        parentId: 49,
-        subItems: [
-          {
-            id: 72,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.BASIC',
-            link: '/auth/success-msg/basic',
-            parentId: 71
-          },
-          {
-            id: 73,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.COVER',
-            link: '/auth/success-msg/cover',
-            parentId: 71
-          },
-        ]
-      },
-      {
-        id: 74,
-        label: 'MENUITEMS.AUTHENTICATION.LIST.TWOSTEPVERIFICATION',
-        parentId: 49,
-        subItems: [
-          {
-            id: 75,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.BASIC',
-            link: '/auth/twostep/basic',
-            parentId: 74
-          },
-          {
-            id: 76,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.COVER',
-            link: '/auth/twostep/cover',
-            parentId: 74
-          },
-        ]
-      },
-      {
-        id: 77,
-        label: 'MENUITEMS.AUTHENTICATION.LIST.ERRORS',
-        parentId: 49,
-        subItems: [
-          {
-            id: 78,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.404BASIC',
-            link: '/auth/errors/404-basic',
-            parentId: 77
-          },
-          {
-            id: 79,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.404COVER',
-            link: '/auth/errors/404-cover',
-            parentId: 77
-          },
-          {
-            id: 80,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.404ALT',
-            link: '/auth/errors/404-alt',
-            parentId: 77
-          },
-          {
-            id: 81,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.500',
-            link: '/auth/errors/page-500',
-            parentId: 77
-          },
-          {
-            id: 81,
-            label: 'MENUITEMS.AUTHENTICATION.LIST.OFFLINE',
-            link: '/auth/errors/offline',
-            parentId: 77
-          },
-        ]
-      },
-    ]
-  },
-  {
     id: 96,
     label: 'MENUITEMS.COMPONENTS.TEXT',
     isTitle: true
@@ -1112,3 +910,12 @@ export const MENU: MenuItem[] = [
   }
 
 ];
+
+const REMOVED_SECTIONS = new Set([
+  'MENUITEMS.BASEUI.TEXT',
+  'MENUITEMS.ADVANCEUI.TEXT',
+  'MENUITEMS.WIDGETS.TEXT',
+  'MENUITEMS.TABLES.TEXT'
+]);
+
+export const MENU: MenuItem[] = MENU_ITEMS.filter(item => !REMOVED_SECTIONS.has(item.label));

@@ -103,27 +103,6 @@
         "HOVERED": "حلق"
       }
     },
-    "AUTHENTICATION": {
-      "TEXT": "المصادقة",
-      "LIST": {
-        "BASIC": "أساسي",
-        "COVER": "التغطية",
-        "SIGNIN": "تسجيل الدخول",
-        "SIGNUP": "اشتراك",
-        "PASSWORDRESET": "إعادة تعيين كلمة المرور",
-        "PASSWORDCREATE": "إنشاء كلمة المرور",
-        "LOCKSCREEN": "اقفل الشاشة",
-        "LOGOUT": "تسجيل خروج",
-        "SUCCESSMESSAGE": "نجاح رسالة",
-        "TWOSTEPVERIFICATION": "التحقق بخطوتين",
-        "ERRORS": "أخطاء",
-        "404BASIC": "404 أساسي",
-        "404COVER": "404 غلاف",
-        "404ALT": "404 بديل",
-        "500": "500",
-        "OFFLINE": "الصفحة غير المتصلة"
-      }
-    },
     "COMPONENTS": {
       "TEXT": "عناصر"
     },

@@ -184,3 +184,20 @@ Come sottomenu:
 Analizza il proegtto e se è tutto chiaro procedi con l'implementazione.
 
 ---------------
+
+Voglio ridurre le dimensioni del progetto /default.
+Sono partito da un progetto gia fatto e molte pagine non mi servono.
+Voglio eliminare le seguenti voci di menu dalla sidebar e le rispettive pagine collegate e quelle relative alle sottovoci di menu:
+ - Autenticazione
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+anche:
+ - Tabelle
+ - Widget
+ - Interfaccia utente avanzata
+ - Interfaccia utente di base
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+---------------

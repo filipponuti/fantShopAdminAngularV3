@@ -43,10 +43,10 @@
                             | translate}}</span>}
                     </a>
 
-                    <div class="collapse menu-dropdown" [ngClass]="{'mega-dropdown-menu':item.label === 'MENUITEMS.BASEUI.TEXT'}" id="sidebarDashboards">
-                        <div [ngClass]="{'row':item.label == 'MENUITEMS.BASEUI.TEXT'}">
+                    <div class="collapse menu-dropdown" id="sidebarDashboards">
+                        <div>
                             @for(subitem of item.subItems; track $index){
-                            <div [ngClass]="{'col-lg-4': item.label == 'MENUITEMS.BASEUI.TEXT'}">
+                            <div>
                                 <ul class="nav nav-sm flex-column" aria-expanded="false">
                                     <li class="nav-item">
                                         @if(hasItems(subitem)){

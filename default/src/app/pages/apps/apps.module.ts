@@ -46,7 +46,6 @@ import { AppsRoutingModule } from "./apps-routing.module";
 import { SharedModule } from '../../shared/shared.module';
 import { ChatComponent } from './chat/chat.component';
 import { MailboxComponent } from './mailbox/mailbox.component';
-import { WidgetsComponent } from './widgets/widgets.component';
 import { EmailBasicComponent } from './email/email-basic/email-basic.component';
 import { EmailEcommerceComponent } from './email/email-ecommerce/email-ecommerce.component';
 
@@ -73,7 +72,6 @@ import { SlickCarouselModule } from 'ngx-slick-carousel';
   declarations: [
     ChatComponent,
     MailboxComponent,
-    WidgetsComponent,
     EmailBasicComponent,
     EmailEcommerceComponent,
     FileManagerComponent,

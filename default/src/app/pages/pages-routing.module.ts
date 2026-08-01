@@ -37,15 +37,8 @@ const routes: Routes = [
     {
       path: 'tickets', loadChildren: () => import('./tickets/tickets.module').then(m => m.TicketsModule)
     },
-    { path: 'ui', loadChildren: () => import('./ui/ui.module').then(m => m.UiModule) },
-    {
-      path: 'advance-ui', loadChildren: () => import('./advance-ui/advance-ui.module').then(m => m.AdvanceUiModule)
-    },
     {
       path: 'forms', loadChildren: () => import('./form/form.module').then(m => m.FormModule)
-    },
-    {
-      path: 'tables', loadChildren: () => import('./tables/tables.module').then(m => m.TablesModule)
     },
     {
       path: 'icons', loadChildren: () => import('./icons/icons.module').then(m => m.IconsModule)

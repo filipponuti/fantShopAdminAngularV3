@@ -6,7 +6,6 @@ import { CalendarComponent } from './calendar/calendar/calendar.component';
 import { MonthGridComponent } from './calendar/month-grid/month-grid.component';
 import { ChatComponent } from "./chat/chat.component";
 import { MailboxComponent } from "./mailbox/mailbox.component";
-import { WidgetsComponent } from "./widgets/widgets.component";
 import { EmailBasicComponent } from "./email/email-basic/email-basic.component";
 import { EmailEcommerceComponent } from "./email/email-ecommerce/email-ecommerce.component";
 import { FileManagerComponent } from "./file-manager/file-manager.component";
@@ -25,10 +24,6 @@ const routes: Routes = [
   {
     path: "mailbox",
     component: MailboxComponent
-  },
-  {
-    path: "widgets",
-    component: WidgetsComponent
   },
   {
     path: "email-basic",

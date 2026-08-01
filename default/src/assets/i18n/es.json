@@ -103,27 +103,6 @@
         "HOVERED": "flotando"
       }
     },
-    "AUTHENTICATION": {
-      "TEXT": "Autenticación",
-      "LIST": {
-        "BASIC": "Básico",
-        "COVER": "Cubrir",
-        "SIGNIN": "Iniciar sesión",
-        "SIGNUP": "Inscribirse",
-        "PASSWORDRESET": "Restablecimiento de contraseña",
-        "PASSWORDCREATE": "Crear contraseña",
-        "LOCKSCREEN": "Bloquear pantalla",
-        "LOGOUT": "Cerrar sesión",
-        "SUCCESSMESSAGE": "Mensaje de éxito",
-        "TWOSTEPVERIFICATION": "Verificación de dos pasos",
-        "ERRORS": "errores",
-        "404BASIC": "404 básico",
-        "404COVER": "404 cubierta",
-        "404ALT": "404 alternativa",
-        "500": "500",
-        "OFFLINE": "Página sin conexión"
-      }
-    },
     "COMPONENTS": {
       "TEXT": "Componentes"
     },

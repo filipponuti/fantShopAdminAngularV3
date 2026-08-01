@@ -103,27 +103,6 @@
         "HOVERED": "Survolé"
       }
     },
-    "AUTHENTICATION": {
-      "TEXT": "Authentification",
-      "LIST": {
-        "BASIC": "De base",
-        "COVER": "Couverture",
-        "SIGNIN": "S'identifier",
-        "SIGNUP": "S'inscrire",
-        "PASSWORDRESET": "Réinitialisation du mot de passe",
-        "PASSWORDCREATE": "Créer un mot de passe",
-        "LOCKSCREEN": "Écran verrouillé",
-        "LOGOUT": "Se déconnecter",
-        "SUCCESSMESSAGE": "Message de réussite",
-        "TWOSTEPVERIFICATION": "Vérification en deux étapes",
-        "ERRORS": "les erreurs",
-        "404BASIC": "404 de base",
-        "404COVER": "404 Couverture",
-        "404ALT": "404 Autre",
-        "500": "500",
-        "OFFLINE": "Hors ligne"
-      }
-    },
     "COMPONENTS": {
       "TEXT": "Composants"
     },

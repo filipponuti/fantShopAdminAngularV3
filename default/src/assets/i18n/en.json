@@ -112,27 +112,6 @@
         "HOVERED": "Hovered"
       }
     },
-    "AUTHENTICATION": {
-      "TEXT": "Authentication",
-      "LIST": {
-        "BASIC": "Basic",
-        "COVER": "Cover",
-        "SIGNIN": "Sign In",
-        "SIGNUP": "Sign Up",
-        "PASSWORDRESET": "Password Reset",
-        "PASSWORDCREATE": "Password Create",
-        "LOCKSCREEN": "Lock Screen",
-        "LOGOUT": "Logout",
-        "SUCCESSMESSAGE": "Success Message",
-        "TWOSTEPVERIFICATION": "Two Step Verification",
-        "ERRORS": "Errors",
-        "404BASIC": "404 Basic",
-        "404COVER": "404 Cover",
-        "404ALT": "404 Alt",
-        "500": "500",
-        "OFFLINE": "Offline Page"
-      }
-    },
     "COMPONENTS": {
       "TEXT": "Components"
     },

@@ -112,27 +112,6 @@
         "HOVERED": "Aleggiava"
       }
     },
-    "AUTHENTICATION": {
-      "TEXT": "Autenticazione",
-      "LIST": {
-        "BASIC": "Di base",
-        "COVER": "Copertina",
-        "SIGNIN": "Registrazione",
-        "SIGNUP": "Iscrizione",
-        "PASSWORDRESET": "Reimpostazione della password",
-        "PASSWORDCREATE": "Password Crea",
-        "LOCKSCREEN": "Blocca schermo",
-        "LOGOUT": "Disconnettersi",
-        "SUCCESSMESSAGE": "Messaggio di successo",
-        "TWOSTEPVERIFICATION": "Verifica in due fasi",
-        "ERRORS": "Errori",
-        "404BASIC": "404 Fondamentale",
-        "404COVER": "404 Copertina",
-        "404ALT": "404 Alt",
-        "500": "500",
-        "OFFLINE": "Pagina offline"
-      }
-    },
     "COMPONENTS": {
       "TEXT": "Componenti"
     },

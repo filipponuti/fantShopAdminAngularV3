@@ -31,9 +31,7 @@ import { sellerDetail } from "./sellerDetail";
 import { COUNTRIES, AssignedData } from "./taskList";
 import { ticketList } from "./ticketList";
 import { todoList, todoAssigned, todoProject } from "./todoList";
-import { tileBoxs1, tileBoxs2, tileBoxs3, tileBoxs4, otherWidgets, widgetsActivities, widgetsTasks, tileBoxs5, hotproducts, candidate, bank } from "./widget";
 import { apikeys } from "./apikey";
-import { ListJs, paginationlist, dataattribute, existingList, FuzzyList, GridJs } from "./tablelistjs";
 import { crmstatData, DealsStatus, UpcomingActivities, ClosingDeals } from "./dashboardCrm";
 
 export {
@@ -77,9 +75,7 @@ export {
     COUNTRIES, AssignedData,
     ticketList,
     todoList, todoAssigned, todoProject,
-    tileBoxs1, tileBoxs2, tileBoxs3, tileBoxs4, otherWidgets, widgetsActivities, widgetsTasks, tileBoxs5, hotproducts, candidate, bank,
     apikeys,
-    ListJs, paginationlist, dataattribute, existingList, FuzzyList, GridJs,
     Recommendedjob, jobcandidate,
     category, calendarEvents,
     crmstatData, DealsStatus, UpcomingActivities, ClosingDeals

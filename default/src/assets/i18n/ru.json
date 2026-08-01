@@ -103,27 +103,6 @@
         "HOVERED": "Парит"
       }
     },
-    "AUTHENTICATION": {
-      "TEXT": "Аутентификация",
-      "LIST": {
-        "BASIC": "Базовый",
-        "COVER": "Покрытие",
-        "SIGNIN": "Войти",
-        "SIGNUP": "Зарегистрироваться",
-        "PASSWORDRESET": "Сброс пароля",
-        "PASSWORDCREATE": "Пароль Создать",
-        "LOCKSCREEN": "Экран блокировки",
-        "LOGOUT": "Выйти",
-        "SUCCESSMESSAGE": "Сообщение об успехе",
-        "TWOSTEPVERIFICATION": "Двухэтапная проверка",
-        "ERRORS": "Ошибки",
-        "404BASIC": "404 Базовый",
-        "404COVER": "404 Обложка",
-        "404ALT": "404 Альт.",
-        "500": "500",
-        "OFFLINE": "Офлайн-страница"
-      }
-    },
     "COMPONENTS": {
       "TEXT": "Компоненты"
     },

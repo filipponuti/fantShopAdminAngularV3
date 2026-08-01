@@ -103,27 +103,6 @@
         "HOVERED": "悬停"
       }
     },
-    "AUTHENTICATION": {
-      "TEXT": "验证",
-      "LIST": {
-        "BASIC": "基本的",
-        "COVER": "覆盖",
-        "SIGNIN": "登入",
-        "SIGNUP": "报名",
-        "PASSWORDRESET": "重设密码",
-        "PASSWORDCREATE": "密码创建",
-        "LOCKSCREEN": "锁屏",
-        "LOGOUT": "登出",
-        "SUCCESSMESSAGE": "成功讯息",
-        "TWOSTEPVERIFICATION": "两步验证",
-        "ERRORS": "错误",
-        "404BASIC": "404 基本款",
-        "404COVER": "404封面",
-        "404ALT": "第404章",
-        "500": "500",
-        "OFFLINE": "离线页面"
-      }
-    },
     "COMPONENTS": {
       "TEXT": "成分"
     },
