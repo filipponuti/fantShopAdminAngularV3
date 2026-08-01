@@ -33,6 +33,20 @@ export const MENU: MenuItem[] = [
     ]
   },
   {
+    id: 10005,
+    label: 'MENUITEMS.FANT.SETTINGS',
+    icon: 'ri-settings-3-line',
+    isCollapsed: true,
+    subItems: [
+      {
+        id: 10006,
+        label: 'MENUITEMS.FANT.AI',
+        link: '/fant-ai-settings',
+        parentId: 10005
+      }
+    ]
+  },
+  {
     id: 2,
     label: 'MENUITEMS.DASHBOARD.TEXT',
     icon: 'ri-dashboard-2-line',

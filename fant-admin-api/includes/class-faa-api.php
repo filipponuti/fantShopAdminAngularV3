@@ -2,7 +2,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-final class Fant_Admin_API_REST {
+final class Fant_Admin_API_V4_REST {
 	private const API_NAMESPACE = 'fant-admin/v1';
 	private const MAX_LOGIN_ATTEMPTS = 5;
 	private const LOGIN_WINDOW = 900;
@@ -57,6 +57,9 @@ final class Fant_Admin_API_REST {
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::READABLE, 'catalog' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_catalog' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_catalog' );
+
+		self::route( '/settings/ai', WP_REST_Server::READABLE, 'ai_settings' );
+		self::route( '/settings/ai', 'PUT', 'update_ai_settings' );
 	}
 
 	private static function route( string $path, string $methods, string $callback, $permission = null ): void {
@@ -80,7 +83,7 @@ final class Fant_Admin_API_REST {
 		return new WP_REST_Response(
 			array(
 				'name'        => 'fantAdminApi',
-				'version'     => FANT_ADMIN_API_VERSION,
+				'version'     => FANT_ADMIN_API_V4_VERSION,
 				'woocommerce' => defined( 'WC_VERSION' ) ? WC_VERSION : null,
 				'hposEnabled' => $hpos_enabled,
 			),
@@ -94,7 +97,7 @@ final class Fant_Admin_API_REST {
 			return self::error( 'unauthorized', 'Token assente, non valido o scaduto.', 401 );
 		}
 
-		if ( ! Fant_Admin_API_Auth::is_administrator( $user ) ) {
+		if ( ! Fant_Admin_API_V4_Auth::is_administrator( $user ) ) {
 			return self::error( 'administrator_required', 'Accesso riservato agli amministratori.', 403 );
 		}
 
@@ -102,7 +105,7 @@ final class Fant_Admin_API_REST {
 	}
 
 	public static function login( WP_REST_Request $request ) {
-		Fant_Admin_API_Install::ensure_installed();
+		Fant_Admin_API_V4_Install::ensure_installed();
 
 		$login       = trim( sanitize_text_field( (string) $request->get_param( 'login' ) ) );
 		$password    = (string) $request->get_param( 'password' );
@@ -125,7 +128,7 @@ final class Fant_Admin_API_REST {
 			return self::error( 'invalid_credentials', 'Credenziali non valide.', 401 );
 		}
 
-		if ( ! Fant_Admin_API_Auth::is_administrator( $user ) ) {
+		if ( ! Fant_Admin_API_V4_Auth::is_administrator( $user ) ) {
 			set_transient( $rate_key, $attempts + 1, self::LOGIN_WINDOW );
 			return self::error( 'administrator_required', 'Accesso riservato agli amministratori.', 403 );
 		}
@@ -133,7 +136,7 @@ final class Fant_Admin_API_REST {
 		delete_transient( $rate_key );
 
 		try {
-			$tokens = Fant_Admin_API_Auth::issue( (int) $user->ID, $device_id, $device_name );
+			$tokens = Fant_Admin_API_V4_Auth::issue( (int) $user->ID, $device_id, $device_name );
 		} catch ( Throwable $exception ) {
 			return self::error( 'session_error', 'Impossibile creare la sessione.', 500 );
 		}
@@ -143,18 +146,18 @@ final class Fant_Admin_API_REST {
 
 	public static function refresh( WP_REST_Request $request ) {
 		$refresh_token = (string) $request->get_param( 'refreshToken' );
-		$user          = '' !== $refresh_token ? Fant_Admin_API_Auth::user_for_refresh_token( $refresh_token ) : null;
+		$user          = '' !== $refresh_token ? Fant_Admin_API_V4_Auth::user_for_refresh_token( $refresh_token ) : null;
 
 		if ( ! $user ) {
 			return self::error( 'invalid_refresh_token', 'Refresh token non valido o scaduto.', 401 );
 		}
 
-		if ( ! Fant_Admin_API_Auth::is_administrator( $user ) ) {
+		if ( ! Fant_Admin_API_V4_Auth::is_administrator( $user ) ) {
 			return self::error( 'administrator_required', 'Accesso riservato agli amministratori.', 403 );
 		}
 
 		try {
-			$tokens = Fant_Admin_API_Auth::rotate( $refresh_token );
+			$tokens = Fant_Admin_API_V4_Auth::rotate( $refresh_token );
 		} catch ( Throwable $exception ) {
 			$tokens = null;
 		}
@@ -169,7 +172,7 @@ final class Fant_Admin_API_REST {
 	public static function logout( WP_REST_Request $request ): WP_REST_Response {
 		$refresh_token = (string) $request->get_param( 'refreshToken' );
 		if ( '' !== $refresh_token ) {
-			Fant_Admin_API_Auth::revoke( $refresh_token );
+			Fant_Admin_API_V4_Auth::revoke( $refresh_token );
 		}
 
 		return new WP_REST_Response( null, 204 );
@@ -368,15 +371,15 @@ final class Fant_Admin_API_REST {
 	}
 
 	public static function catalogs() {
-		return rest_ensure_response( Fant_Admin_API_Catalogs::all() );
+		return rest_ensure_response( Fant_Admin_API_V4_Catalogs::all() );
 	}
 
 	public static function catalog( WP_REST_Request $request ) {
-		return rest_ensure_response( Fant_Admin_API_Catalogs::find( (string) $request['catalogCode'] ) );
+		return rest_ensure_response( Fant_Admin_API_V4_Catalogs::find( (string) $request['catalogCode'] ) );
 	}
 
 	public static function create_catalog( WP_REST_Request $request ) {
-		$result = Fant_Admin_API_Catalogs::create(
+		$result = Fant_Admin_API_V4_Catalogs::create(
 			(string) $request->get_param( 'codice' ),
 			(string) $request->get_param( 'nome' )
 		);
@@ -396,17 +399,28 @@ final class Fant_Admin_API_REST {
 		}
 
 		return rest_ensure_response(
-			Fant_Admin_API_Catalogs::update( $code, (string) ( $params['nome'] ?? '' ) )
+			Fant_Admin_API_V4_Catalogs::update( $code, (string) ( $params['nome'] ?? '' ) )
 		);
 	}
 
 	public static function delete_catalog( WP_REST_Request $request ) {
-		$result = Fant_Admin_API_Catalogs::delete( (string) $request['catalogCode'] );
+		$result = Fant_Admin_API_V4_Catalogs::delete( (string) $request['catalogCode'] );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
 		return new WP_REST_Response( null, 204 );
+	}
+
+	public static function ai_settings(): WP_REST_Response {
+		return new WP_REST_Response( Fant_Admin_API_V4_AI_Settings::get_public(), 200 );
+	}
+
+	public static function update_ai_settings( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		$result = Fant_Admin_API_V4_AI_Settings::update( $params );
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
 
 	private static function user_data( WP_User $user ): array {

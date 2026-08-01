@@ -12,7 +12,9 @@
       "HOME": "Home",
       "SHOP": "Shop",
       "CATEGORIES": "Categories",
-      "CATALOGS": "Catalogs"
+      "CATALOGS": "Catalogs",
+      "SETTINGS": "Settings",
+      "AI": "AI"
     },
     "DASHBOARD": {
       "TEXT": "Dashboards",

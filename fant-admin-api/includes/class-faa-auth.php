@@ -2,7 +2,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-final class Fant_Admin_API_Auth {
+final class Fant_Admin_API_V4_Auth {
 	private const TOKEN_BYTES = 32;
 
 	public static function init(): void {

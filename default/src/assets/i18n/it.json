@@ -12,7 +12,9 @@
       "HOME": "Home",
       "SHOP": "Shop",
       "CATEGORIES": "Categorie",
-      "CATALOGS": "Cataloghi"
+      "CATALOGS": "Cataloghi",
+      "SETTINGS": "Settings",
+      "AI": "AI"
     },
     "DASHBOARD": {
       "TEXT": "Cruscotti",

@@ -9,9 +9,10 @@ import { FantRoutingModule } from './fant-routing.module';
 import { FantHomeComponent } from './fant-home/fant-home.component';
 import { FantCategorieComponent } from './fant-categorie/fant-categorie.component';
 import { FantCataloghiComponent } from './fant-cataloghi/fant-cataloghi.component';
+import { FantAiSettingsComponent } from './fant-ai-settings/fant-ai-settings.component';
 
 @NgModule({
-  declarations: [FantHomeComponent, FantCategorieComponent, FantCataloghiComponent],
+  declarations: [FantHomeComponent, FantCategorieComponent, FantCataloghiComponent, FantAiSettingsComponent],
   imports: [
     CommonModule,
     ReactiveFormsModule,

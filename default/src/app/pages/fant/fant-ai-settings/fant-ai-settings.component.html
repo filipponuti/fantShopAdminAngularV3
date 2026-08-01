@@ -1,0 +1,119 @@
+<app-breadcrumbs title="Impostazioni AI" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
+
+<div class="alert alert-info d-flex align-items-start" role="alert">
+  <i class="ri-shield-keyhole-line fs-20 me-3"></i>
+  <div>
+    <strong>Chiavi protette lato server</strong>
+    <div>Le chiavi API vengono cifrate in WordPress e non vengono mai mostrate nuovamente in questa pagina.</div>
+  </div>
+</div>
+
+@if (errorMessage) {
+  <div class="alert alert-danger">{{ errorMessage }}</div>
+}
+@if (successMessage) {
+  <div class="alert alert-success">{{ successMessage }}</div>
+}
+
+@if (loading) {
+  <div class="card">
+    <div class="card-body py-5 text-center">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="text-muted mt-3 mb-0">Caricamento impostazioni AI...</p>
+    </div>
+  </div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="row g-4">
+      @for (provider of providers; track provider.id) {
+        <div class="col-12">
+          <div class="card provider-card mb-0" [class.provider-disabled]="!isEnabled(provider.id)" [formGroupName]="provider.id">
+            <div class="card-header provider-header d-flex flex-wrap align-items-center gap-3">
+              <span class="avatar-sm flex-shrink-0">
+                <span class="avatar-title rounded bg-{{ provider.color }}-subtle text-{{ provider.color }} fs-22">
+                  <i [class]="provider.icon"></i>
+                </span>
+              </span>
+              <div class="flex-grow-1">
+                <h4 class="card-title mb-1">{{ provider.name }}</h4>
+                <p class="text-muted mb-0">{{ provider.description }}</p>
+              </div>
+              <div class="form-check form-switch form-switch-lg mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" [id]="provider.id + '-enabled'" formControlName="enabled">
+                <label class="form-check-label fw-semibold" [for]="provider.id + '-enabled'">Attiva</label>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-lg-6">
+                  <label class="form-label" [for]="provider.id + '-key'">API Key <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="ri-key-2-line"></i></span>
+                    <input type="password" class="form-control" [id]="provider.id + '-key'" formControlName="apiKey"
+                      autocomplete="new-password" [placeholder]="apiKeyConfigured[provider.id] ? 'Lascia vuoto per mantenere la chiave salvata' : 'Inserisci la chiave API'">
+                  </div>
+                  @if (apiKeyConfigured[provider.id]) {
+                    <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Chiave già configurata</small>
+                  } @else if (group(provider.id).get('apiKey')?.touched && group(provider.id).get('apiKey')?.invalid) {
+                    <small class="text-danger">La chiave API è obbligatoria per attivare il provider.</small>
+                  }
+                </div>
+
+                <div class="col-lg-6">
+                  <label class="form-label" [for]="provider.id + '-model'">Modello <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" [id]="provider.id + '-model'" formControlName="model" placeholder="Nome del modello API">
+                  @if (group(provider.id).get('model')?.touched && group(provider.id).get('model')?.invalid) {
+                    <small class="text-danger">Il modello è obbligatorio.</small>
+                  }
+                </div>
+
+                <div class="col-lg-9">
+                  <label class="form-label" [for]="provider.id + '-endpoint'">Endpoint API <span class="text-danger">*</span></label>
+                  <input type="url" class="form-control" [id]="provider.id + '-endpoint'" formControlName="endpoint" placeholder="https://...">
+                  @if (group(provider.id).get('endpoint')?.touched && group(provider.id).get('endpoint')?.invalid) {
+                    <small class="text-danger">Inserisci un endpoint HTTPS valido.</small>
+                  }
+                </div>
+
+                <div class="col-lg-3">
+                  <label class="form-label" [for]="provider.id + '-timeout'">Timeout (secondi)</label>
+                  <input type="number" class="form-control" [id]="provider.id + '-timeout'" formControlName="timeoutSeconds" min="5" max="300">
+                </div>
+
+                @if (provider.id === 'openai') {
+                  <div class="col-lg-6">
+                    <label class="form-label" for="openai-organization">Organization ID <span class="text-muted">(opzionale)</span></label>
+                    <input type="text" class="form-control" id="openai-organization" formControlName="organization" placeholder="org-...">
+                  </div>
+                  <div class="col-lg-6">
+                    <label class="form-label" for="openai-project">Project ID <span class="text-muted">(opzionale)</span></label>
+                    <input type="text" class="form-control" id="openai-project" formControlName="project" placeholder="proj_...">
+                  </div>
+                }
+
+                @if (provider.id === 'claude') {
+                  <div class="col-lg-6">
+                    <label class="form-label" for="claude-api-version">Versione API</label>
+                    <input type="text" class="form-control" id="claude-api-version" formControlName="apiVersion" placeholder="AAAA-MM-GG">
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="d-flex justify-content-end mt-4">
+      <button type="submit" class="btn btn-primary btn-lg" [disabled]="saving">
+        @if (saving) {
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        } @else {
+          <i class="ri-save-3-line me-2"></i>
+        }
+        Salva impostazioni
+      </button>
+    </div>
+  </form>
+}

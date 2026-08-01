@@ -2,7 +2,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-final class Fant_Admin_API_Catalogs {
+final class Fant_Admin_API_V4_Catalogs {
 	private const SCHEMA_VERSION = 1;
 	private const INDEX_FILE = 'cataloghi-index.json';
 

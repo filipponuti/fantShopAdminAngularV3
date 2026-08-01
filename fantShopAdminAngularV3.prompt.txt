@@ -158,6 +158,29 @@ Voglio eliminare le seguenti voci di menu dalla sidebar e le rispettive pagine c
 
 Analizza il proegtto e verifica la fattibilità senza fare modifiche.
 
-
 ---------------
 
+Voglio aggiungere una nuova funzionalità, quella di poter creare delle copertine, della pagine in pdf, sfruttando la API di AI.
+
+Dopo il Menu Shop aggiungi un Menu "Settings" con un sottomenu "AI".
+In questa pagina riporta 3 sezioni, ognuna incorniciata, con gli eventuali parametri per l'utilizzo delle API:
+ - Gemini
+ - Chat GPT
+ - Claude
+
+ Ogni sezione avrà in testa un interruttore per abilare o meno i campi della sezione (esempio 'Attiva')
+
+Analizza il proegtto e se è tutto chiaro procedi con l'implementazione.
+
+---------------
+Prima del menu "Settings" crea un menù "Cataloghi".
+Come sottomenu:
+  - Cataloghi, lo spostiamo da Shop
+  - Copertine: crea una nuova pagina "fant-copertine". Il Layout è come quello di Cataloghi.
+    I dati vengono salvati su un .json. 
+    Ogni record generà un pdf, che salviamo nella sottocartella ./copertine_pdf/.
+    Inoltre per ogni record possono venire caricati dei files per la creazione della copertina; li salviamo in ./copertine_allegati/ e per ogni copertina la sua sottocartella.
+    Ogni copertina ha un cuo codice univoco.
+Analizza il proegtto e se è tutto chiaro procedi con l'implementazione.
+
+---------------

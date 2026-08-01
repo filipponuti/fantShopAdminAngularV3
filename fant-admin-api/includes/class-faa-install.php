@@ -2,9 +2,9 @@
 
 defined( 'ABSPATH' ) || exit;
 
-final class Fant_Admin_API_Install {
+final class Fant_Admin_API_V4_Install {
 	public static function ensure_installed(): void {
-		if ( FANT_ADMIN_API_VERSION !== get_option( 'faa_version' ) ) {
+		if ( FANT_ADMIN_API_V4_VERSION !== get_option( 'faa_version' ) ) {
 			self::activate();
 		}
 	}
@@ -41,6 +41,6 @@ final class Fant_Admin_API_Install {
 		add_option( 'faa_access_token_ttl', 900 );
 		add_option( 'faa_refresh_token_ttl', 2592000 );
 		add_option( 'faa_disable_emails', 'yes' );
-		update_option( 'faa_version', FANT_ADMIN_API_VERSION );
+		update_option( 'faa_version', FANT_ADMIN_API_V4_VERSION );
 	}
 }
