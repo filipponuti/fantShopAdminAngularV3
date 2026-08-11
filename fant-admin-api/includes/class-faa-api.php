@@ -54,6 +54,8 @@ final class Fant_Admin_API_V4_REST {
 				),
 			)
 		);
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/contenuto', 'PUT', 'update_catalog_contenuto' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/settings', 'PUT', 'update_catalog_settings' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::READABLE, 'catalog' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_catalog' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_catalog' );
@@ -80,8 +82,14 @@ final class Fant_Admin_API_V4_REST {
 		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)/attachments', WP_REST_Server::CREATABLE, 'upload_cover_attachments' );
 		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)/pdf', WP_REST_Server::READABLE, 'cover_pdf' );
 
+		self::route( '/layouts', WP_REST_Server::READABLE, 'layouts' );
+		self::route( '/layouts/(?P<layoutCode>[a-zA-Z0-9_-]+)', WP_REST_Server::READABLE, 'layout' );
+		self::route( '/layouts/(?P<layoutCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_layout' );
+
 		self::route( '/settings/ai', WP_REST_Server::READABLE, 'ai_settings' );
 		self::route( '/settings/ai', 'PUT', 'update_ai_settings' );
+
+		self::route( '/products', WP_REST_Server::READABLE, 'products' );
 	}
 
 	private static function route( string $path, string $methods, string $callback, $permission = null ): void {
@@ -425,6 +433,30 @@ final class Fant_Admin_API_V4_REST {
 		);
 	}
 
+	public static function update_catalog_contenuto( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Catalogs::update_contenuto(
+				strtolower( (string) $request['catalogCode'] ),
+				$params['prodotti'] ?? null
+			)
+		);
+	}
+
+	public static function update_catalog_settings( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Catalogs::update_settings(
+				strtolower( (string) $request['catalogCode'] ),
+				$params
+			)
+		);
+	}
+
 	public static function delete_catalog( WP_REST_Request $request ) {
 		$result = Fant_Admin_API_V4_Catalogs::delete( (string) $request['catalogCode'] );
 		if ( is_wp_error( $result ) ) {
@@ -480,6 +512,41 @@ final class Fant_Admin_API_V4_REST {
 	public static function cover_pdf( WP_REST_Request $request ) {
 		$result = Fant_Admin_API_V4_Covers::pdf( (string) $request['coverCode'] );
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function layouts() {
+		return rest_ensure_response( Fant_Admin_API_V4_Layouts::all() );
+	}
+
+	public static function layout( WP_REST_Request $request ) {
+		return rest_ensure_response( Fant_Admin_API_V4_Layouts::find( (string) $request['layoutCode'] ) );
+	}
+
+	public static function update_layout( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Layouts::update(
+				(string) $request['layoutCode'],
+				$params
+			)
+		);
+	}
+
+	public static function products( WP_REST_Request $request ) {
+		$category_id = (int) $request->get_param( 'categoryId' );
+		if ( $category_id > 0 ) {
+			$include = ! in_array( strtolower( (string) $request->get_param( 'includeChildren' ) ), array( '0', 'false' ), true );
+			return rest_ensure_response( Fant_Admin_API_V4_Products::by_category( $category_id, $include ) );
+		}
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Products::search(
+				(string) $request->get_param( 'search' ),
+				(int) ( $request->get_param( 'page' ) ?: 1 ),
+				(int) ( $request->get_param( 'perPage' ) ?: 20 )
+			)
+		);
 	}
 
 	public static function ai_settings(): WP_REST_Response {

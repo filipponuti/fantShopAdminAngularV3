@@ -13,7 +13,9 @@
       "SHOP": "Shop",
       "CATEGORIES": "Categorie",
       "CATALOGS": "Cataloghi",
-      "COVERS": "Copertine",
+      "LAYOUTS": "Layout Articoli",
+      "COVERS": "Copertine/Retri",
+      "GENERAL": "General",
       "SETTINGS": "Settings",
       "AI": "AI"
     },

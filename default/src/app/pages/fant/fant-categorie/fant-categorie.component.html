@@ -54,6 +54,8 @@
       <div class="category-node" cdkDrag [cdkDragData]="node">
         <div class="category-row d-flex align-items-center" [class.active]="selectedId === node.id" (click)="edit(node, categoryModal)">
           <span class="drag-handle me-2" cdkDragHandle title="Trascina"><i class="ri-drag-move-2-line"></i></span>
+          <span class="category-icon me-2"><i class="ri-folder-3-line"></i></span>
+          <span class="flex-grow-1 text-truncate">{{ categoryLabel(node) }}</span>
           @if (node.children.length) {
             <button
               type="button"
@@ -86,8 +88,6 @@
               <i class="ri-arrow-down-s-line"></i>
             </button>
           </span>
-          <span class="category-icon me-2"><i class="ri-folder-3-line"></i></span>
-          <span class="flex-grow-1 text-truncate">{{ categoryLabel(node) }}</span>
           <button type="button" class="btn btn-sm btn-ghost-primary" title="Aggiungi sottocategoria" (click)="$event.stopPropagation(); newCategory(categoryModal, node.id)">
             <i class="ri-add-line"></i>
           </button>

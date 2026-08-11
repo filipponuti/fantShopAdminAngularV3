@@ -1,0 +1,13 @@
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.layout-code {
+  font-family: var(--vz-font-monospace, monospace);
+  letter-spacing: 0.02em;
+}
+
+.empty-state {
+  padding: 2rem 1rem;
+}

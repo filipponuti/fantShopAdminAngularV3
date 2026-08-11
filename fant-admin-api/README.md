@@ -12,6 +12,10 @@ Plugin WordPress/WooCommerce per l'autenticazione della dashboard Angular
 - `GET /wp-json/fant-admin/v1/me`
 - `GET|POST /wp-json/fant-admin/v1/catalogs`
 - `GET|PUT|DELETE /wp-json/fant-admin/v1/catalogs/{codice}`
+- `PUT /wp-json/fant-admin/v1/catalogs/{codice}/contenuto`
+- `PUT /wp-json/fant-admin/v1/catalogs/{codice}/settings`
+- `GET /wp-json/fant-admin/v1/layouts`
+- `GET|PUT /wp-json/fant-admin/v1/layouts/{codice}`
 - `GET|POST /wp-json/fant-admin/v1/covers`
 - `GET|PUT|DELETE /wp-json/fant-admin/v1/covers/{codice}`
 - `POST /wp-json/fant-admin/v1/covers/{codice}/attachments`

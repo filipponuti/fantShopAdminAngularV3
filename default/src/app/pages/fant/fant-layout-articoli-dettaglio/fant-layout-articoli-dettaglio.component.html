@@ -1,0 +1,175 @@
+<app-breadcrumbs
+  [title]="title"
+  [breadcrumbItems]="breadCrumbItems"
+  backLink="/fant-layout-articoli">
+</app-breadcrumbs>
+
+@if (error) {
+  <div class="alert alert-danger" role="alert">{{ error }}</div>
+}
+@if (success) {
+  <div class="alert alert-success" role="status">{{ success }}</div>
+}
+
+@if (loading) {
+  <div class="card">
+    <div class="card-body text-center py-5">
+      <span class="spinner-border text-primary" role="status"></span>
+      <p class="text-muted mt-3 mb-0">Caricamento layout...</p>
+    </div>
+  </div>
+} @else if (detail) {
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5 class="card-title mb-0">Scheda layout</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="text-muted small">Codice</div>
+          <div class="fw-medium"><code>{{ detail.testata.codice }}</code></div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Nome</div>
+          <div class="fw-medium">{{ detail.testata.nome }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-muted small">Famiglia</div>
+          <div>{{ familyLabel(detail.layout.family) }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-muted small">Immagini variazioni</div>
+          <div>{{ detail.layout.showVariationImages ? 'Sì' : 'No' }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-muted small">Bancali</div>
+          <div>{{ detail.layout.bancali ? 'Sì' : 'No' }}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Etichetta confezione</div>
+          <div>{{ detail.layout.labels?.confezione || '—' }}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Etichetta set</div>
+          <div>{{ detail.layout.labels?.set || '—' }}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Creato</div>
+          <div>{{ detail.testata.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Aggiornato</div>
+          <div>{{ detail.testata.updatedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h5 class="card-title mb-0">Template layout</h5>
+    </div>
+    <div class="card-body">
+      <ul ngbNav #templateNav="ngbNav" [(activeId)]="activeTemplateTab" class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
+        <li [ngbNavItem]="'anteprima'" class="nav-item">
+          <a ngbNavLink class="nav-link" role="tab">Anteprima</a>
+          <ng-template ngbNavContent>
+            @if (isArticoloSemplice) {
+              <div class="layout-preview-wrap">
+                <article class="as-block" aria-label="Anteprima Articolo semplice">
+                  <header class="as-section-bar">FATTE A MANO &gt;&gt; Fontane</header>
+
+                  <div class="as-col-headers" role="row">
+                    <span>Foto</span>
+                    <span>Codice</span>
+                    <span>Articolo</span>
+                    <span>Prezzo</span>
+                    <span>Note</span>
+                    <span>Iva</span>
+                  </div>
+
+                  <div class="as-product-row">
+                    <div class="as-foto">
+                      <div class="as-foto-ph" aria-hidden="true"></div>
+                    </div>
+                    <div class="as-codice">TF8100</div>
+                    <div class="as-nome">FONTANA CON ROSONE</div>
+                    <div class="as-prezzo"></div>
+                    <div class="as-note"></div>
+                    <div class="as-iva"></div>
+                  </div>
+
+                  <div class="as-variants">
+                    <div class="as-variant-headers">
+                      <span>Codice</span>
+                      <span>Prezzo</span>
+                      <span>Misure Esterne</span>
+                      <span>Colore</span>
+                      <span>Iva</span>
+                    </div>
+                    <div class="as-variant-row">
+                      <span>TATITF8100</span>
+                      <span>€ 76,70</span>
+                      <span>cm. 45 x 26 – h. 70</span>
+                      <span></span>
+                      <span>22%</span>
+                    </div>
+                    @for (line of emptyVariantLines; track line) {
+                      <div class="as-variant-empty"></div>
+                    }
+                  </div>
+                </article>
+              </div>
+              <p class="text-muted small mt-3 mb-0">
+                Anteprima statica del layout <strong>Articolo semplice</strong>
+                (intestazione sezione + riga articolo + dettaglio misure/prezzo).
+                I colori della barra sezione saranno quelli impostati in Cataloghi → Settings → Sezione.
+              </p>
+            } @else {
+              <div class="template-placeholder text-muted">
+                <i class="ri-layout-masonry-line display-6 d-block mb-3"></i>
+                <p class="mb-1 fw-medium">Template layout: da definire</p>
+                <small>Il template per questo tipo arriverà in un secondo passo.</small>
+              </div>
+            }
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="'editor'" class="nav-item">
+          <a ngbNavLink class="nav-link" role="tab">Ckeditor Classic Editor</a>
+          <ng-template ngbNavContent>
+            <p class="text-muted">Use <code>ckeditor-classic</code> class to set ckeditor classic editor.</p>
+            @if (activeTemplateTab === 'editor') {
+              <div class="ckeditor-classic layout-editor">
+                <ckeditor [editor]="Editor" [(ngModel)]="editorData" name="layoutTemplateEditor"></ckeditor>
+              </div>
+            }
+            <div class="d-flex flex-wrap gap-2 justify-content-end mt-3">
+              <button
+                type="button"
+                class="btn btn-light"
+                [disabled]="saving"
+                (click)="restoreTemplate()">
+                Ripristina
+              </button>
+              <button
+                type="button"
+                class="btn btn-success"
+                [disabled]="saving"
+                (click)="saveTemplate()">
+                @if (saving) {
+                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                Salva
+              </button>
+            </div>
+          </ng-template>
+        </li>
+      </ul>
+      <div [ngbNavOutlet]="templateNav"></div>
+    </div>
+    <div class="card-footer text-end">
+      <button type="button" class="btn btn-light" (click)="back()">Indietro</button>
+    </div>
+  </div>
+}

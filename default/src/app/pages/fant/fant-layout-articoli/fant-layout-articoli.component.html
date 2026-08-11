@@ -1,0 +1,105 @@
+<app-breadcrumbs title="Layout Articoli" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
+
+@if (error) {
+  <div class="alert alert-danger" role="alert">{{ error }}</div>
+}
+
+<div class="card">
+  <div class="card-header border-bottom-dashed">
+    <div class="row g-4 align-items-center">
+      <div class="col-sm">
+        <h5 class="card-title mb-0">Elenco Layout Articoli</h5>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body border-bottom-dashed border-bottom">
+    <div class="row g-3">
+      <div class="col-xl-6">
+        <div class="search-box">
+          <input
+            type="search"
+            class="form-control"
+            placeholder="Cerca per codice, nome o famiglia..."
+            [value]="searchTerm"
+            (input)="setSearch($any($event.target).value)">
+          <i class="ri-search-line search-icon"></i>
+        </div>
+      </div>
+      <div class="col-xl-6 d-flex align-items-center justify-content-xl-end">
+        <span class="text-muted">{{ filteredLayouts.length }} layout</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    @if (loading) {
+      <div class="text-center py-5">
+        <span class="spinner-border text-primary" role="status"></span>
+        <p class="text-muted mt-3 mb-0">Caricamento layout...</p>
+      </div>
+    } @else {
+      <div class="table-responsive table-card mb-1">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light text-muted">
+            <tr>
+              <th class="sortable" (click)="sortBy('codice')">Codice <i [class]="sortIcon('codice')"></i></th>
+              <th class="sortable" (click)="sortBy('nome')">Nome <i [class]="sortIcon('nome')"></i></th>
+              <th class="sortable" (click)="sortBy('family')">Famiglia <i [class]="sortIcon('family')"></i></th>
+              <th class="sortable" (click)="sortBy('updatedAt')">Ultima modifica <i [class]="sortIcon('updatedAt')"></i></th>
+              <th class="text-end">Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (layout of visibleLayouts; track layout.codice) {
+              <tr>
+                <td><span class="badge bg-primary-subtle text-primary layout-code">{{ layout.codice }}</span></td>
+                <td class="fw-medium">{{ layout.nome }}</td>
+                <td>{{ familyLabel(layout.family) }}</td>
+                <td>{{ layout.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-end">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-ghost-primary"
+                    title="Dettaglio"
+                    (click)="openDetail(layout)">
+                    <i class="ri-eye-line fs-16"></i>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state text-center text-muted py-5">
+                    <i class="ri-layout-grid-line display-5"></i>
+                    <p class="mt-3 mb-1 fw-medium">Nessun layout trovato</p>
+                    <small>{{ searchTerm ? 'Prova a modificare la ricerca.' : 'I layout verranno creati al primo accesso API.' }}</small>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (filteredLayouts.length) {
+        <div class="row justify-content-md-between align-items-md-center mt-3">
+          <div class="col-sm-5 text-muted mb-2">
+            Visualizzati {{ firstVisibleItem }}–{{ lastVisibleItem }} di {{ filteredLayouts.length }}
+          </div>
+          <div class="col-sm-7">
+            <ngb-pagination
+              class="d-flex justify-content-sm-end"
+              [collectionSize]="filteredLayouts.length"
+              [(page)]="page"
+              [pageSize]="pageSize"
+              [maxSize]="5"
+              [rotate]="true"
+              [boundaryLinks]="true">
+            </ngb-pagination>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

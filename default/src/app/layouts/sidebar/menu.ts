@@ -8,19 +8,19 @@ const MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 10001,
-    label: 'MENUITEMS.FANT.HOME',
+    label: 'Home',
     icon: 'ri-home-4-line',
     link: '/fant-home'
   },
   {
     id: 10002,
-    label: 'MENUITEMS.FANT.SHOP',
+    label: 'Shop',
     icon: 'ri-store-2-line',
     isCollapsed: true,
     subItems: [
       {
         id: 10003,
-        label: 'MENUITEMS.FANT.CATEGORIES',
+        label: 'Categorie',
         link: '/fant-categorie',
         parentId: 10002
       }
@@ -28,33 +28,44 @@ const MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 10004,
-    label: 'MENUITEMS.FANT.CATALOGS',
+    label: 'Cataloghi',
     icon: 'ri-book-2-line',
     isCollapsed: true,
     subItems: [
       {
-        id: 10005,
-        label: 'MENUITEMS.FANT.CATALOGS',
-        link: '/fant-cataloghi',
+        id: 10010,
+        label: 'Layout Articoli',
+        link: '/fant-layout-articoli',
         parentId: 10004
       },
       {
         id: 10006,
-        label: 'MENUITEMS.FANT.COVERS',
+        label: 'Copertine/Retri',
         link: '/fant-copertine',
+        parentId: 10004
+      },
+      {
+        id: 10005,
+        label: 'Cataloghi',
+        link: '/fant-cataloghi',
         parentId: 10004
       }
     ]
   },
   {
+    id: 10009,
+    label: 'General',
+    isTitle: true
+  },
+  {
     id: 10007,
-    label: 'MENUITEMS.FANT.SETTINGS',
+    label: 'Settings',
     icon: 'ri-settings-3-line',
     isCollapsed: true,
     subItems: [
       {
         id: 10008,
-        label: 'MENUITEMS.FANT.AI',
+        label: 'AI',
         link: '/fant-ai-settings',
         parentId: 10007
       }
@@ -980,10 +991,14 @@ const MENU_ITEMS: MenuItem[] = [
 ];
 
 const REMOVED_SECTIONS = new Set([
+  'MENUITEMS.DASHBOARD.TEXT',
   'MENUITEMS.BASEUI.TEXT',
   'MENUITEMS.ADVANCEUI.TEXT',
   'MENUITEMS.WIDGETS.TEXT',
-  'MENUITEMS.TABLES.TEXT'
+  'MENUITEMS.FORMS.TEXT',
+  'MENUITEMS.TABLES.TEXT',
+  'MENUITEMS.ICONS.TEXT',
+  'MENUITEMS.MULTILEVEL.TEXT'
 ]);
 
 export const MENU: MenuItem[] = MENU_ITEMS.filter(item => !REMOVED_SECTIONS.has(item.label));

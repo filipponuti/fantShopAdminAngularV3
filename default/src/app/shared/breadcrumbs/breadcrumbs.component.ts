@@ -13,6 +13,7 @@ import { Component, OnInit, Input } from '@angular/core';
 export class BreadcrumbsComponent implements OnInit {
 
   @Input() title: string | undefined;
+  @Input() backLink: string | any[] | undefined;
   @Input()
   breadcrumbItems!: Array<{
     active?: boolean;

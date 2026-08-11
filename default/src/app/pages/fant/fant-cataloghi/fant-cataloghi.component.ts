@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { finalize } from 'rxjs';
 
@@ -33,7 +34,8 @@ export class FantCataloghiComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly modalService: NgbModal,
-    private readonly catalogService: CatalogService
+    private readonly catalogService: CatalogService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -137,6 +139,10 @@ export class FantCataloghiComponent implements OnInit {
     this.catalogForm.reset({ codice: catalog.codice, nome: catalog.nome });
     this.catalogForm.controls['codice'].disable();
     this.modalService.open(content, { size: 'md', centered: true });
+  }
+
+  openArticoli(catalog: CatalogSummary): void {
+    this.router.navigate(['/fant-cataloghi', catalog.codice]);
   }
 
   save(): void {

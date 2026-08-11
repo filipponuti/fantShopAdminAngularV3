@@ -14,7 +14,7 @@ type CoverSortField = 'codice' | 'nome' | 'numeroAllegati' | 'updatedAt';
   standalone: false
 })
 export class FantCopertineComponent implements OnInit {
-  breadCrumbItems = [{ label: 'Cataloghi' }, { label: 'Copertine', active: true }];
+  breadCrumbItems = [{ label: 'Cataloghi' }, { label: 'Copertine/Retri', active: true }];
   coverForm!: FormGroup;
   covers: CoverSummary[] = [];
   editingCode: string | null = null;
