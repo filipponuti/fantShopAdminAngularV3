@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { finalize, switchMap } from 'rxjs';
 
-import { CoverService, CoverSummary } from '../../../core/services/cover.service';
+import { CoverDetail, CoverService, CoverSummary } from '../../../core/services/cover.service';
 
 type CoverSortField = 'codice' | 'nome' | 'numeroAllegati' | 'updatedAt';
 
@@ -36,7 +37,8 @@ export class FantCopertineComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly modalService: NgbModal,
-    private readonly coverService: CoverService
+    private readonly coverService: CoverService,
+    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -79,6 +81,10 @@ export class FantCopertineComponent implements OnInit {
       next: covers => { this.covers = covers; this.ensureValidPage(); },
       error: error => this.error = this.errorMessage(error, 'Impossibile caricare le copertine.')
     });
+  }
+
+  openDetail(cover: CoverSummary): void {
+    this.router.navigate(['/fant-copertine', cover.codice]);
   }
 
   setSearch(value: string): void { this.searchTerm = value; this.page = 1; }
@@ -137,7 +143,7 @@ export class FantCopertineComponent implements OnInit {
     ).subscribe({
       next: cover => {
         this.modalService.dismissAll();
-        this.upsertCover(cover);
+        this.upsertCover(this.toSummary(cover));
         this.success = editing ? 'Copertina aggiornata e PDF rigenerato.' : 'Copertina e PDF creati.';
       },
       error: error => this.error = this.errorMessage(error, 'Impossibile salvare la copertina.')
@@ -187,6 +193,20 @@ export class FantCopertineComponent implements OnInit {
       ? this.covers.map(item => item.codice === cover.codice ? cover : item)
       : [...this.covers, cover];
     this.ensureValidPage();
+  }
+
+  private toSummary(cover: CoverSummary | CoverDetail): CoverSummary {
+    if ('testata' in cover) {
+      return {
+        codice: cover.testata.codice,
+        nome: cover.testata.nome,
+        numeroAllegati: cover.allegati?.length ?? 0,
+        pdfNome: cover.pdf?.nome ?? '',
+        createdAt: cover.testata.createdAt,
+        updatedAt: cover.testata.updatedAt,
+      };
+    }
+    return cover;
   }
 
   private ensureValidPage(): void {

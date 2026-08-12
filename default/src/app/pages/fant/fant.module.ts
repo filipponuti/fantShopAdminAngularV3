@@ -13,6 +13,7 @@ import { FantCataloghiComponent } from './fant-cataloghi/fant-cataloghi.componen
 import { FantCataloghiArticoliComponent } from './fant-cataloghi-articoli/fant-cataloghi-articoli.component';
 import { FantAiSettingsComponent } from './fant-ai-settings/fant-ai-settings.component';
 import { FantCopertineComponent } from './fant-copertine/fant-copertine.component';
+import { FantCopertineDettaglioComponent } from './fant-copertine-dettaglio/fant-copertine-dettaglio.component';
 import { FantLayoutArticoliComponent } from './fant-layout-articoli/fant-layout-articoli.component';
 import { FantLayoutArticoliDettaglioComponent } from './fant-layout-articoli-dettaglio/fant-layout-articoli-dettaglio.component';
 
@@ -25,6 +26,7 @@ import { FantLayoutArticoliDettaglioComponent } from './fant-layout-articoli-det
     FantLayoutArticoliComponent,
     FantLayoutArticoliDettaglioComponent,
     FantCopertineComponent,
+    FantCopertineDettaglioComponent,
     FantAiSettingsComponent
   ],
   imports: [

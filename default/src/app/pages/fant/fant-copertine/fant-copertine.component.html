@@ -58,6 +58,9 @@
                 <td>{{ cover.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td class="text-end">
                   <div class="hstack gap-2 justify-content-end">
+                    <button type="button" class="btn btn-sm btn-ghost-info" title="Apri dettaglio" (click)="openDetail(cover)">
+                      <i class="ri-eye-fill fs-16"></i>
+                    </button>
                     <button type="button" class="btn btn-sm btn-ghost-success" title="Scarica PDF" [disabled]="downloadingCode === cover.codice" (click)="downloadPdf(cover)">
                       @if (downloadingCode === cover.codice) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="ri-download-2-line fs-16"></i> }
                     </button>
