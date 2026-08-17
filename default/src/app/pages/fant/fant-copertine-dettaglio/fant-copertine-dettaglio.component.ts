@@ -53,6 +53,7 @@ export class FantCopertineDettaglioComponent implements OnInit, OnDestroy {
   loading = false;
   saving = false;
   uploading = false;
+  openingPdf = false;
   error = '';
   success = '';
   articoliDirty = false;
@@ -119,6 +120,10 @@ export class FantCopertineDettaglioComponent implements OnInit, OnDestroy {
       return `${active.label} (${active.model || 'modello n/d'})`;
     }
     return 'Nessuna AI attiva';
+  }
+
+  get currentPdfName(): string {
+    return (this.detail?.pdf?.nome || '').trim();
   }
 
   get allegati(): CoverAllegato[] {
@@ -387,6 +392,32 @@ export class FantCopertineDettaglioComponent implements OnInit, OnDestroy {
     this.router.navigate(['/fant-copertine']);
   }
 
+  openCurrentPdf(): void {
+    if (!this.codice || this.openingPdf) {
+      return;
+    }
+    this.openingPdf = true;
+    this.error = '';
+    this.covers.downloadPdf(this.codice).pipe(finalize(() => this.openingPdf = false)).subscribe({
+      next: pdf => {
+        const bytes = Uint8Array.from(atob(pdf.contentBase64), char => char.charCodeAt(0));
+        const url = URL.createObjectURL(new Blob([bytes], { type: pdf.mimeType || 'application/pdf' }));
+        const opened = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!opened) {
+          // Popup bloccato: fallback download.
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = pdf.filename || this.currentPdfName || 'copertina.pdf';
+          link.click();
+        }
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: error => {
+        this.error = error?.error?.message ?? 'Impossibile aprire il PDF.';
+      },
+    });
+  }
+
   private applyDetail(detail: CoverDetail): void {
     this.detail = {
       ...detail,
@@ -480,8 +511,18 @@ export class FantCopertineDettaglioComponent implements OnInit, OnDestroy {
       gemini: 'Gemini',
       openai: 'OpenAI',
       claude: 'Claude',
+      'free-gemini': 'Gemini Free',
+      'free-groq': 'Groq Free',
+      'free-openrouter': 'OpenRouter Free',
     };
-    const order: AiProviderId[] = ['openai', 'gemini', 'claude'];
+    const order: AiProviderId[] = [
+      'openai',
+      'gemini',
+      'claude',
+      'free-gemini',
+      'free-groq',
+      'free-openrouter',
+    ];
     const enabled = order
       .map(id => {
         const provider = settings[id];

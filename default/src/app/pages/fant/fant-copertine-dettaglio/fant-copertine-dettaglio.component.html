@@ -5,20 +5,45 @@
 </app-breadcrumbs>
 
 <div class="ai-status-bar card mb-3">
-  <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center gap-2">
-    <span class="text-muted small">AI attiva (Settings → AI):</span>
-    @if (aiLoading) {
-      <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
-    } @else if (aiProviders.length) {
-      <strong class="ai-active-label">{{ activeAiLabel }}</strong>
-      @for (provider of aiProviders; track provider.id) {
-        <span class="badge" [class.bg-success]="provider.active" [class.bg-light]="!provider.active" [class.text-body]="!provider.active">
-          {{ provider.label }}
-        </span>
+  <div class="card-body py-2 px-3">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+      <span class="text-muted small">AI attiva (Settings → AI):</span>
+      @if (aiLoading) {
+        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+      } @else if (aiProviders.length) {
+        <strong class="ai-active-label">{{ activeAiLabel }}</strong>
+        @for (provider of aiProviders; track provider.id) {
+          <span class="badge" [class.bg-success]="provider.active" [class.bg-light]="!provider.active" [class.text-body]="!provider.active">
+            {{ provider.label }}
+          </span>
+        }
+      } @else {
+        <span class="badge bg-warning-subtle text-warning">Nessuna AI abilitata con chiave configurata</span>
       }
-    } @else {
-      <span class="badge bg-warning-subtle text-warning">Nessuna AI abilitata con chiave configurata</span>
-    }
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="text-muted small">File corrente:</span>
+      @if (currentPdfName) {
+        <code class="current-pdf-name">{{ currentPdfName }}</code>
+        <button
+          type="button"
+          class="btn btn-sm btn-soft-primary"
+          [disabled]="openingPdf || !codice"
+          title="Apri PDF"
+          (click)="openCurrentPdf()">
+          @if (openingPdf) {
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+          } @else {
+            <i class="ri-external-link-line me-1"></i>
+          }
+          Apri
+        </button>
+      } @else if (loading) {
+        <span class="text-muted small">—</span>
+      } @else {
+        <span class="badge bg-light text-body">Nessun PDF associato</span>
+      }
+    </div>
   </div>
 </div>
 

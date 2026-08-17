@@ -4,7 +4,22 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
-export type AiProviderId = 'gemini' | 'openai' | 'claude';
+export type AiProviderId =
+  | 'gemini'
+  | 'openai'
+  | 'claude'
+  | 'free-gemini'
+  | 'free-groq'
+  | 'free-openrouter';
+
+export const AI_PROVIDER_IDS: AiProviderId[] = [
+  'gemini',
+  'openai',
+  'claude',
+  'free-gemini',
+  'free-groq',
+  'free-openrouter',
+];
 
 export interface AiProviderSettings {
   enabled: boolean;
@@ -15,13 +30,11 @@ export interface AiProviderSettings {
   organization?: string;
   project?: string;
   apiVersion?: string;
+  siteUrl?: string;
+  appName?: string;
 }
 
-export interface AiSettings {
-  gemini: AiProviderSettings;
-  openai: AiProviderSettings;
-  claude: AiProviderSettings;
-}
+export type AiSettings = Record<AiProviderId, AiProviderSettings>;
 
 export interface AiProviderSettingsPayload {
   enabled: boolean;
@@ -32,13 +45,11 @@ export interface AiProviderSettingsPayload {
   organization?: string;
   project?: string;
   apiVersion?: string;
+  siteUrl?: string;
+  appName?: string;
 }
 
-export interface AiSettingsPayload {
-  gemini: AiProviderSettingsPayload;
-  openai: AiProviderSettingsPayload;
-  claude: AiProviderSettingsPayload;
-}
+export type AiSettingsPayload = Record<AiProviderId, AiProviderSettingsPayload>;
 
 @Injectable({ providedIn: 'root' })
 export class AiSettingsService {

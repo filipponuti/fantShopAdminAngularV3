@@ -7,7 +7,14 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Fant_Admin_API_V4_AI_Settings {
 	private const OPTION_NAME = 'faa_ai_settings';
-	private const PROVIDERS   = array( 'gemini', 'openai', 'claude' );
+	private const PROVIDERS   = array(
+		'gemini',
+		'openai',
+		'claude',
+		'free-gemini',
+		'free-groq',
+		'free-openrouter',
+	);
 
 	public static function get_public(): array {
 		$settings = self::stored_settings();
@@ -27,7 +34,7 @@ final class Fant_Admin_API_V4_AI_Settings {
 	 * server-side API calls. This method must never be used as a REST response.
 	 */
 	public static function credentials( string $provider ) {
-		$provider = sanitize_key( $provider );
+		$provider = self::normalize_provider_id( $provider );
 		if ( ! in_array( $provider, self::PROVIDERS, true ) ) {
 			return new WP_Error( 'unknown_ai_provider', 'Provider AI non valido.' );
 		}
@@ -133,6 +140,18 @@ final class Fant_Admin_API_V4_AI_Settings {
 				$config['apiVersion'] = $api_version;
 			}
 
+			if ( 'free-openrouter' === $provider ) {
+				$config['siteUrl'] = array_key_exists( 'siteUrl', $incoming )
+					? self::optional_https_url( $incoming['siteUrl'] )
+					: (string) ( $config['siteUrl'] ?? '' );
+				if ( is_wp_error( $config['siteUrl'] ) ) {
+					return $config['siteUrl'];
+				}
+				$config['appName'] = array_key_exists( 'appName', $incoming )
+					? self::limited_text( $incoming['appName'], 120 )
+					: (string) ( $config['appName'] ?? '' );
+			}
+
 			$current[ $provider ] = $config;
 		}
 
@@ -166,6 +185,20 @@ final class Fant_Admin_API_V4_AI_Settings {
 				'endpoint'   => 'https://api.anthropic.com/v1',
 				'apiVersion' => '2023-06-01',
 			) ),
+			'free-gemini' => array_merge( $common, array(
+				'model'    => 'gemini-1.5-flash',
+				'endpoint' => 'https://generativelanguage.googleapis.com/v1beta',
+			) ),
+			'free-groq' => array_merge( $common, array(
+				'model'    => 'llama-3.1-8b-instant',
+				'endpoint' => 'https://api.groq.com/openai/v1',
+			) ),
+			'free-openrouter' => array_merge( $common, array(
+				'model'    => 'meta-llama/llama-3.1-8b-instruct:free',
+				'endpoint' => 'https://openrouter.ai/api/v1',
+				'siteUrl'  => '',
+				'appName'  => '',
+			) ),
 		);
 	}
 
@@ -181,6 +214,31 @@ final class Fant_Admin_API_V4_AI_Settings {
 		}
 
 		return $defaults;
+	}
+
+	private static function normalize_provider_id( string $provider ): string {
+		$provider = strtolower( trim( $provider ) );
+		return preg_replace( '/[^a-z0-9\-]/', '', $provider ) ?? '';
+	}
+
+	/**
+	 * @param mixed $value
+	 * @return string|WP_Error
+	 */
+	private static function optional_https_url( $value ) {
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			return '';
+		}
+		$url = untrailingslashit( esc_url_raw( $value ) );
+		if ( '' === $url || ! str_starts_with( strtolower( $url ), 'https://' ) || ! wp_http_validate_url( $url ) ) {
+			return new WP_Error(
+				'invalid_openrouter_site_url',
+				'Il Site URL OpenRouter deve essere un indirizzo HTTPS valido.',
+				array( 'status' => 422 )
+			);
+		}
+		return $url;
 	}
 
 	private static function limited_text( $value, int $max_length ): string {
