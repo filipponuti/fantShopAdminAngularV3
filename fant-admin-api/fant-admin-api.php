@@ -2,7 +2,7 @@
 /**
  * Plugin Name: fantAdminApi
  * Description: API REST sicure per la dashboard amministrativa WooCommerce fantShopAdmin.
- * Version: 0.5.2
+ * Version: 0.9.3
  * Requires at least: 6.9
  * Requires PHP: 8.1
  * Requires Plugins: woocommerce
@@ -11,15 +11,23 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'FANT_ADMIN_API_V4_VERSION', '0.5.2' );
+define( 'FANT_ADMIN_API_V4_VERSION', '0.9.3' );
 define( 'FANT_ADMIN_API_V4_FILE', __FILE__ );
 define( 'FANT_ADMIN_API_V4_PATH', plugin_dir_path( __FILE__ ) );
+
+// Evita che un BOM/whitespace di altri plugin spoili gli header CORS sulle API.
+$faa_request_uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+if ( '' !== $faa_request_uri && false !== strpos( $faa_request_uri, '/wp-json/fant-admin/' ) && ! headers_sent() ) {
+	ob_start();
+}
 
 require_once FANT_ADMIN_API_V4_PATH . 'includes/class-faa-install.php';
 require_once FANT_ADMIN_API_V4_PATH . 'includes/class-faa-auth.php';
 require_once FANT_ADMIN_API_V4_PATH . 'includes/class-faa-catalogs.php';
 require_once FANT_ADMIN_API_V4_PATH . 'includes/class-faa-covers.php';
+require_once FANT_ADMIN_API_V4_PATH . 'includes/class-faa-layouts.php';
 require_once FANT_ADMIN_API_V4_PATH . 'includes/class-faa-ai-settings.php';
+require_once FANT_ADMIN_API_V4_PATH . 'includes/class-faa-products.php';
 require_once FANT_ADMIN_API_V4_PATH . 'includes/class-faa-api.php';
 
 /**

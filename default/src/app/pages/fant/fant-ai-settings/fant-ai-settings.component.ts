@@ -3,8 +3,8 @@ import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/fo
 import { finalize } from 'rxjs';
 
 import {
+  AI_PROVIDER_IDS,
   AiProviderId,
-  AiProviderSettings,
   AiSettings,
   AiSettingsPayload,
   AiSettingsService
@@ -16,6 +16,9 @@ interface ProviderView {
   description: string;
   icon: string;
   color: string;
+  free?: boolean;
+  modelOptions?: string[];
+  modelFreeText?: boolean;
 }
 
 @Component({
@@ -51,13 +54,51 @@ export class FantAiSettingsComponent implements OnInit {
       description: 'API Anthropic per elaborazione e generazione dei contenuti.',
       icon: 'ri-sparkling-2-line',
       color: 'warning'
+    },
+    {
+      id: 'free-gemini',
+      name: 'Gemini Free',
+      description: 'Google AI Studio (tier gratuito) per prototipi e cataloghi.',
+      icon: 'ri-gemini-line',
+      color: 'info',
+      free: true,
+      modelOptions: ['gemini-1.5-flash', 'gemini-1.5-pro']
+    },
+    {
+      id: 'free-groq',
+      name: 'Groq Free',
+      description: 'Groq Cloud: inferenza veloce su modelli open con piano free.',
+      icon: 'ri-flashlight-line',
+      color: 'danger',
+      free: true,
+      modelOptions: ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'mixtral-8x7b-32768']
+    },
+    {
+      id: 'free-openrouter',
+      name: 'OpenRouter Free',
+      description: 'OpenRouter con modelli :free. Supporta anche stringhe modello libere.',
+      icon: 'ri-route-line',
+      color: 'secondary',
+      free: true,
+      modelFreeText: true,
+      modelOptions: ['meta-llama/llama-3.1-8b-instruct:free']
     }
   ];
+
+  readonly paidProviders = this.providers.filter(provider => !provider.free);
+  readonly freeProviders = this.providers.filter(provider => provider.free);
 
   readonly form = this.formBuilder.group({
     gemini: this.createProviderGroup(),
     openai: this.createProviderGroup({ organization: '', project: '' }),
-    claude: this.createProviderGroup({ apiVersion: '2023-06-01' })
+    claude: this.createProviderGroup({ apiVersion: '2023-06-01' }),
+    'free-gemini': this.createProviderGroup({}, 'gemini-1.5-flash', 'https://generativelanguage.googleapis.com/v1beta'),
+    'free-groq': this.createProviderGroup({}, 'llama-3.1-8b-instant', 'https://api.groq.com/openai/v1'),
+    'free-openrouter': this.createProviderGroup(
+      { siteUrl: '', appName: '' },
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'https://openrouter.ai/api/v1',
+    ),
   });
 
   loading = true;
@@ -67,7 +108,18 @@ export class FantAiSettingsComponent implements OnInit {
   apiKeyConfigured: Record<AiProviderId, boolean> = {
     gemini: false,
     openai: false,
-    claude: false
+    claude: false,
+    'free-gemini': false,
+    'free-groq': false,
+    'free-openrouter': false,
+  };
+  showApiKey: Record<AiProviderId, boolean> = {
+    gemini: false,
+    openai: false,
+    claude: false,
+    'free-gemini': false,
+    'free-groq': false,
+    'free-openrouter': false,
   };
 
   constructor(
@@ -83,11 +135,18 @@ export class FantAiSettingsComponent implements OnInit {
   }
 
   group(provider: AiProviderId): FormGroup {
-    return this.form.controls[provider];
+    return this.form.get(provider) as FormGroup;
   }
 
   isEnabled(provider: AiProviderId): boolean {
     return Boolean(this.group(provider).get('enabled')?.value);
+  }
+
+  toggleApiKeyVisibility(provider: AiProviderId): void {
+    this.showApiKey = {
+      ...this.showApiKey,
+      [provider]: !this.showApiKey[provider],
+    };
   }
 
   save(): void {
@@ -100,10 +159,9 @@ export class FantAiSettingsComponent implements OnInit {
       return;
     }
 
-    const raw = this.form.getRawValue();
-    const payload = raw as AiSettingsPayload;
+    const raw = this.form.getRawValue() as AiSettingsPayload;
     this.saving = true;
-    this.aiSettingsService.update(payload).pipe(
+    this.aiSettingsService.update(raw).pipe(
       finalize(() => this.saving = false)
     ).subscribe({
       next: (settings) => {
@@ -129,8 +187,11 @@ export class FantAiSettingsComponent implements OnInit {
   }
 
   private applySettings(settings: AiSettings): void {
-    this.providers.forEach(({ id }) => {
+    AI_PROVIDER_IDS.forEach((id) => {
       const config = settings[id];
+      if (!config) {
+        return;
+      }
       this.apiKeyConfigured[id] = config.apiKeyConfigured;
       this.group(id).patchValue({
         ...config,
@@ -175,12 +236,16 @@ export class FantAiSettingsComponent implements OnInit {
     [apiKeyControl, modelControl, endpointControl].forEach((control) => control?.updateValueAndValidity({ emitEvent: false }));
   }
 
-  private createProviderGroup(extra: Record<string, string> = {}): FormGroup {
+  private createProviderGroup(
+    extra: Record<string, string> = {},
+    defaultModel = '',
+    defaultEndpoint = '',
+  ): FormGroup {
     const controls: Record<string, AbstractControl> = {
       enabled: this.formBuilder.control(false),
       apiKey: this.formBuilder.control(''),
-      model: this.formBuilder.control(''),
-      endpoint: this.formBuilder.control(''),
+      model: this.formBuilder.control(defaultModel),
+      endpoint: this.formBuilder.control(defaultEndpoint),
       timeoutSeconds: this.formBuilder.control(60, [Validators.required, Validators.min(5), Validators.max(300)])
     };
     Object.entries(extra).forEach(([key, value]) => controls[key] = this.formBuilder.control(value));

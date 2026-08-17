@@ -1,0 +1,337 @@
+<app-breadcrumbs
+  [title]="title"
+  [breadcrumbItems]="breadCrumbItems"
+  backLink="/fant-copertine">
+</app-breadcrumbs>
+
+<div class="ai-status-bar card mb-3">
+  <div class="card-body py-2 px-3">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+      <span class="text-muted small">AI attiva (Settings → AI):</span>
+      @if (aiLoading) {
+        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+      } @else if (aiProviders.length) {
+        <strong class="ai-active-label">{{ activeAiLabel }}</strong>
+        @for (provider of aiProviders; track provider.id) {
+          <span class="badge" [class.bg-success]="provider.active" [class.bg-light]="!provider.active" [class.text-body]="!provider.active">
+            {{ provider.label }}
+          </span>
+        }
+      } @else {
+        <span class="badge bg-warning-subtle text-warning">Nessuna AI abilitata con chiave configurata</span>
+      }
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="text-muted small">File corrente:</span>
+      @if (currentPdfName) {
+        <code class="current-pdf-name">{{ currentPdfName }}</code>
+        <button
+          type="button"
+          class="btn btn-sm btn-soft-primary"
+          [disabled]="openingPdf || !codice"
+          title="Apri PDF"
+          (click)="openCurrentPdf()">
+          @if (openingPdf) {
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+          } @else {
+            <i class="ri-external-link-line me-1"></i>
+          }
+          Apri
+        </button>
+      } @else if (loading) {
+        <span class="text-muted small">—</span>
+      } @else {
+        <span class="badge bg-light text-body">Nessun PDF associato</span>
+      }
+    </div>
+  </div>
+</div>
+
+@if (error) {
+  <div class="alert alert-danger" role="alert">{{ error }}</div>
+}
+@if (success) {
+  <div class="alert alert-success" role="status">{{ success }}</div>
+}
+
+@if (loading) {
+  <div class="card">
+    <div class="card-body text-center py-5">
+      <span class="spinner-border text-primary" role="status"></span>
+      <p class="text-muted mt-3 mb-0">Caricamento copertina...</p>
+    </div>
+  </div>
+} @else if (detail) {
+  <div class="catalog-shell" [class.sidebar-collapsed]="mainSidebarCollapsed">
+    <aside class="main-sidebar card">
+      <div class="card-header main-sidebar-header">
+        @if (!mainSidebarCollapsed) {
+          <h5 class="card-title mb-0">Copertina</h5>
+        }
+        <button
+          type="button"
+          class="btn btn-ghost-secondary btn-sm main-sidebar-toggle"
+          [attr.aria-expanded]="!mainSidebarCollapsed"
+          [attr.aria-label]="mainSidebarCollapsed ? 'Espandi sidebar' : 'Restringi sidebar'"
+          [title]="mainSidebarCollapsed ? 'Espandi sidebar' : 'Restringi sidebar'"
+          (click)="toggleMainSidebar()">
+          <i class="ri-menu-line"></i>
+        </button>
+      </div>
+      <nav class="main-sidebar-nav" aria-label="Sezioni copertina">
+        @for (item of mainNavItems; track item.id) {
+          <button
+            type="button"
+            class="main-sidebar-item"
+            [class.active]="activeView === item.id"
+            [title]="item.label"
+            [attr.aria-label]="item.label"
+            (click)="selectMainView(item.id)">
+            <i [class]="item.icon"></i>
+            @if (!mainSidebarCollapsed) {
+              <span>{{ item.label }}</span>
+            }
+          </button>
+        }
+      </nav>
+    </aside>
+
+    <div class="catalog-main">
+      @if (activeView === 'allegati') {
+        <div class="view-panel card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Allegati</h5>
+          </div>
+          <div class="card-body view-panel-body">
+            <p class="text-muted small">
+              I file sono salvati in
+              <code>fant-admin-api/copertine_allegati/{{ codice }}/</code>.
+              Il <strong>nome</strong> (alias) viene usato nella chat.
+            </p>
+
+            <div class="row g-2 align-items-end mb-4">
+              <div class="col-md-8">
+                <label class="form-label" for="cover-attach-files">Carica file</label>
+                <input id="cover-attach-files" type="file" class="form-control" multiple (change)="selectFiles($event)">
+              </div>
+              <div class="col-md-4">
+                <button type="button" class="btn btn-primary w-100" [disabled]="uploading || !selectedFiles.length" (click)="uploadSelectedFiles()">
+                  @if (uploading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                  Carica
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table align-middle">
+                <thead>
+                  <tr>
+                    <th>File</th>
+                    <th>Nome (chat)</th>
+                    <th>Percorso</th>
+                    <th class="text-end">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of allegati; track item.nome) {
+                    <tr>
+                      <td>
+                        <div class="fw-medium">{{ item.nome }}</div>
+                        <small class="text-muted">{{ item.tipo || '—' }} · {{ item.dimensione | number }} B</small>
+                      </td>
+                      <td>
+                        @if (editingAliasNome === item.nome) {
+                          <div class="input-group input-group-sm">
+                            <input class="form-control" [value]="aliasDraft" (input)="aliasDraft = $any($event.target).value">
+                            <button type="button" class="btn btn-success" [disabled]="saving" (click)="saveAlias(item)">Ok</button>
+                            <button type="button" class="btn btn-light" (click)="cancelEditAlias()">Annulla</button>
+                          </div>
+                        } @else {
+                          <span class="badge bg-primary-subtle text-primary">{{ item.alias }}</span>
+                        }
+                      </td>
+                      <td><code class="small">{{ item.percorso }}</code></td>
+                      <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-ghost-primary" title="Modifica nome" (click)="startEditAlias(item)">
+                          <i class="ri-pencil-line"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-ghost-danger" title="Elimina" [disabled]="saving" (click)="removeAllegato(item)">
+                          <i class="ri-delete-bin-line"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4" class="text-muted text-center py-4">Nessun allegato. Carica immagini o file di riferimento.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (activeView === 'articoli') {
+        <div class="view-panel card">
+          <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h5 class="card-title mb-0">Articoli</h5>
+            <button type="button" class="btn btn-success btn-sm" [disabled]="saving || !articoliDirty" (click)="saveArticoli()">
+              @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              Salva elenco
+            </button>
+          </div>
+          <div class="card-body view-panel-body">
+            <div class="btn-group mb-3" role="group">
+              <button type="button" class="btn" [class.btn-primary]="addArticoloTab === 'prodotto'" [class.btn-light]="addArticoloTab !== 'prodotto'" (click)="addArticoloTab = 'prodotto'">Prodotto</button>
+              <button type="button" class="btn" [class.btn-primary]="addArticoloTab === 'categoria'" [class.btn-light]="addArticoloTab !== 'categoria'" (click)="addArticoloTab = 'categoria'">Categoria</button>
+            </div>
+
+            @if (addArticoloTab === 'prodotto') {
+              <div class="mb-3">
+                <label class="form-label" for="cover-product-search">Cerca prodotto</label>
+                <input id="cover-product-search" type="search" class="form-control" [value]="searchTerm" (input)="onSearchInput($any($event.target).value)" placeholder="SKU o nome...">
+                @if (searchingProducts) {
+                  <div class="text-muted small mt-2">Ricerca...</div>
+                }
+                @if (searchResults.length) {
+                  <ul class="list-group mt-2">
+                    @for (item of searchResults; track item.id) {
+                      <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><code>{{ item.sku || '—' }}</code> · {{ item.name }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" (click)="addProduct(item)">Aggiungi</button>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            } @else {
+              <div class="mb-3">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="include-children" [checked]="includeChildren" (change)="includeChildren = $any($event.target).checked">
+                  <label class="form-check-label" for="include-children">Includi sottocategorie</label>
+                </div>
+                @if (loadingCategories) {
+                  <div class="text-muted">Caricamento categorie...</div>
+                } @else {
+                  <div class="category-tree border rounded p-2 mb-2">
+                    <ng-template #catNode let-nodes>
+                      @for (node of nodes; track node.id) {
+                        <div class="category-node">
+                          <div class="d-flex align-items-center gap-1">
+                            @if (node.children.length) {
+                              <button type="button" class="btn btn-sm btn-ghost-secondary px-1" (click)="toggleCategory(node.id)">
+                                <i [class]="isCategoryExpanded(node.id) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line'"></i>
+                              </button>
+                            } @else {
+                              <span class="px-2"></span>
+                            }
+                            <button
+                              type="button"
+                              class="btn btn-sm flex-grow-1 text-start"
+                              [class.btn-primary]="selectedCategoryId === node.id"
+                              [class.btn-light]="selectedCategoryId !== node.id"
+                              (click)="selectCategory(node.id)">
+                              {{ node.name }}
+                            </button>
+                          </div>
+                          @if (node.children.length && isCategoryExpanded(node.id)) {
+                            <div class="ms-3 mt-1">
+                              <ng-container *ngTemplateOutlet="catNode; context: { $implicit: node.children }"></ng-container>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </ng-template>
+                    <ng-container *ngTemplateOutlet="catNode; context: { $implicit: categoryTree }"></ng-container>
+                  </div>
+                  <button type="button" class="btn btn-outline-primary" (click)="addSelectedCategory()">Aggiungi categoria</button>
+                }
+              </div>
+            }
+
+            <h6 class="mt-4">Elenco salvato (nomi usabili in chat)</h6>
+            <div class="table-responsive">
+              <table class="table align-middle">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Riferimento</th>
+                    <th>Nome chat</th>
+                    <th class="text-end">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of articoli; track item.id; let i = $index) {
+                    <tr>
+                      <td>
+                        <span class="badge" [class.bg-info-subtle]="item.tipo === 'product'" [class.text-info]="item.tipo === 'product'" [class.bg-secondary-subtle]="item.tipo === 'category'" [class.text-secondary]="item.tipo === 'category'">
+                          {{ item.tipo === 'product' ? 'Prodotto' : 'Categoria' }}
+                        </span>
+                      </td>
+                      <td>
+                        @if (item.tipo === 'product') {
+                          <code>{{ item.sku }}</code> · {{ item.nome }}
+                        } @else {
+                          {{ item.nome }}
+                          @if (item.includeChildren) { <small class="text-muted">(+ sottocategorie)</small> }
+                        }
+                      </td>
+                      <td>
+                        <input class="form-control form-control-sm" [value]="item.alias" (input)="updateArticoloAlias(i, $any($event.target).value)">
+                      </td>
+                      <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-ghost-danger" (click)="removeArticolo(i)"><i class="ri-delete-bin-line"></i></button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="4" class="text-muted text-center py-4">Nessun articolo. Aggiungi prodotti o categorie.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (activeView === 'chat') {
+        <div class="view-panel card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Chat</h5>
+          </div>
+          <div class="card-body view-panel-body chat-layout">
+            <div class="chat-pane">
+              <div class="chat-messages border rounded p-3 mb-3">
+                @for (msg of chatMessages; track $index) {
+                  <div class="chat-bubble" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+                    <div class="small text-muted mb-1">{{ msg.role === 'user' ? 'Tu' : 'AI' }}</div>
+                    <div>{{ msg.content }}</div>
+                  </div>
+                } @empty {
+                  <p class="text-muted mb-0">
+                    Scrivi le istruzioni per generare il PDF. Potrai citare i nomi allegati e articoli.
+                    L’integrazione con il provider AI arriverà nel passo successivo.
+                  </p>
+                }
+              </div>
+              <div class="input-group">
+                <textarea class="form-control" rows="3" [(ngModel)]="chatDraft" placeholder="Es. Crea una copertina A4 con il logo Logo e i prodotti della categoria Fontane..."></textarea>
+                <button type="button" class="btn btn-primary" (click)="sendChatPlaceholder()">Invia</button>
+              </div>
+            </div>
+            <div class="preview-pane">
+              <h6 class="mb-2">Anteprima</h6>
+              <div class="preview-frame border rounded p-3 text-muted">
+                @if (detail.chat?.previewHtml) {
+                  <div [innerHTML]="detail.chat?.previewHtml"></div>
+                } @else {
+                  <p class="mb-0">L’anteprima del documento generato comparirà qui.</p>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -1,6 +1,8 @@
 declare const SITE_URL: string;
 
-const defaultSiteUrl = 'https://www.filipponuti.it/agenti';
+//const defaultSiteUrl = 'https://www.filipponuti.it/agenti';
+const defaultSiteUrl = 'https://www.filipponuti.it/shop';
+
 const siteUrl = (typeof SITE_URL === 'string' ? SITE_URL : defaultSiteUrl)
   .trim()
   .replace(/\/+$/, '');

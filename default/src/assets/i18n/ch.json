@@ -8,6 +8,16 @@
     "MENU": {
       "TEXT": "菜单"
     },
+    "FANT": {
+      "HOME": "Home",
+      "SHOP": "Shop",
+      "CATEGORIES": "Categories",
+      "CATALOGS": "Catalogs",
+      "COVERS": "Covers",
+      "GENERAL": "General",
+      "SETTINGS": "Settings",
+      "AI": "AI"
+    },
     "DASHBOARD": {
       "TEXT": "仪表板",
       "BADGE": "新的",

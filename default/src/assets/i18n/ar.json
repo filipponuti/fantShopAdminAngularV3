@@ -8,6 +8,16 @@
     "MENU": {
       "TEXT": "قائمة"
     },
+    "FANT": {
+      "HOME": "Home",
+      "SHOP": "Shop",
+      "CATEGORIES": "Categories",
+      "CATALOGS": "Catalogs",
+      "COVERS": "Covers",
+      "GENERAL": "General",
+      "SETTINGS": "Settings",
+      "AI": "AI"
+    },
     "DASHBOARD": {
       "TEXT": "لوحات القيادة",
       "BADGE": "جديد",

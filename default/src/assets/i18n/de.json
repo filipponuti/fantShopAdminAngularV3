@@ -8,6 +8,16 @@
     "MENU": {
       "TEXT": "SPEISEKARTE"
     },
+    "FANT": {
+      "HOME": "Startseite",
+      "SHOP": "Shop",
+      "CATEGORIES": "Kategorien",
+      "CATALOGS": "Kataloge",
+      "COVERS": "Titelseiten",
+      "GENERAL": "Allgemein",
+      "SETTINGS": "Einstellungen",
+      "AI": "KI"
+    },
     "DASHBOARD": {
       "TEXT": "Dashboards",
       "BADGE": "Neu",

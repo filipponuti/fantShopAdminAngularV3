@@ -201,3 +201,260 @@ anche:
 Analizza il proegtto e verifica la fattibilità senza fare modifiche.
 
 ---------------
+in Cataloghi -> Cataloghi,
+per ogni record della lista aggiungere un pulsante per entrare in modifica degli articoli del catalogo.
+Entiamo in una nuova pagina di edit , che in fonddo ha i 2 bottoni "Annulla" e "Salva".
+La pagina è in una nuova Rotta /codice-catalogo.
+Il titolo "Articoli per il catalogo: " + il nome.
+
+La parte centrale + divisa in 2 sezioni: sidebar a sinistra laterale e corpo main a destra che riporta l'elenco delle pagine degli articoli del menu.
+
+Nella sidebar a sx, Titolo "Aggiunggi" e sotto 2 tab:
+ - "Categoria"; qqui troviamo l'albero delle categorie ed è possibe selezionarne una e clikkare sul bottone "Aggiungi"
+ - "Articolo": un campo "Cerca" che ricerca gli articoli sia per Codice, Sku e Descrizione e li riporta uuna lista. E' possibile selezionarne uno o piu
+   e cliccare su aggiungi.
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+
+Aggiungiamo la possibilita di poter aggiungere un pdf ad inizio documento (copertina)
+ed uno a fine documento.
+Questi pdf verranno salvati nella cartella del catalogo corrispondente.
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+Per queste informazioni aggiungiamo una sezione sotto al titolo.
+Ci sono questi 2 nuovi campi con, per ogni riga, un pulsante per scegliere il file , ed uno per apreire in anteprima l'eventuale file.
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+---------------
+
+PDF
+
+aggiungiamo la strutture delle pagine, 
+la possibilita di scorrere le pagine, di generare il pdf della singola pagina,
+di generare il pdf finale del documento.
+Per la genrazione del pdf finale , 2 interruttori toggle "includi copertina" e "includi fine documento".
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+--------------
+
+
+in Cataloghi 
+aggiungiamo una nuova gestione "Layout Articoli",  e la mettiamo prima di Copertine.
+
+
+In questa gestione generiamo i layout dei tipi di articoli, che verranno usati per generare i pdf dei cataloghi.
+
+Per il momento abbiamo queste 3 tipologie:
+ - Articolo Semplice
+ - Articolo Con Variazioni Senza immagini
+ - Articolo Con Variazioni Con immagini
+ - Nutrizione Sfuso
+ - Nutrizione con bancali
+
+I record non sono elimnabili ma hanno solo un pulsante per visualizzare il dettaglio (che poi definiremo per ogni record).
+
+Vedi tu come salvare queste informazioni che dovranno essere riusate per creare il pdf del calendario.
+
+Ha senso salvarle il html? e quindi poterle modificare?
+
+
+per html ustiamo "Ckeditor Classic Editor"?
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+
+
+labels:
+  - Confezione da 24 pz.  (giallo)
+  - Set da 3 pz. (azzurrino)
+
+
+---------------
+
+
+Riaggiornamento Layout per "Articoli per Catalogo".
+L'attuale sezione (inclusi i bottoni Annulla e Salva) con sidebar che chiamo XX diventa una sottosezione.
+
+Creiamo una nuova sidebar a sinistra mainSidebar e a destra mainContent.
+
+Le voci di mainSidebar:
+  - Settings
+  - Sezioni e articoli: nella mainContent di questa voce riportiamo XX.
+  - PDF
+
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+
+-----------------
+Aggiorno il sito a cui puntare.
+nuovi dati:
+
+https://www.filipponuti.it/shop
+username: codex
+pwd:codex
+
+Verifica se plugin per backend presente o se da installare.
+
+-----------------
+
+
+
+
+in Cataloghi 
+aggiungiamo una nuova gestione "Layout Articoli",  e la mettiamo prima di Copertine.
+
+
+In questa gestione generiamo i layout dei tipi di articoli, che verranno usati per generare i pdf dei cataloghi.
+
+Per il momento abbiamo queste 3 tipologie:
+ - Articolo Semplice
+ - Articolo Con Variazioni Senza immagini
+ - Articolo Con Variazioni Con immagini
+ - Nutrizione Sfuso
+ - Nutrizione con bancali
+
+I record non sono elimnabili ma hanno solo un pulsante per visualizzare il dettaglio (che poi definiremo per ogni record).
+
+Vedi tu come salvare queste informazioni che dovranno essere riusate per creare il pdf del calendario.
+
+Ha senso salvarle il html? e quindi poterle modificare?
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+
+
+labels:
+  - Confezione da 24 pz.  (giallo)
+  - Set da 3 pz. (azzurrino)
+
+
+---------------
+
+
+
+
+Aggiungiamo la possibilita di poter aggiungere un pdf ad inizio documento (copertina)
+ed uno a fine documento.
+Questi pdf verranno salvati nella cartella del catalogo corrispondente.
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+Per queste informazioni aggiungiamo una sezione sotto al titolo.
+Ci sono questi 2 nuovi campi con, per ogni riga, un pulsante per scegliere il file , ed uno per apreire in anteprima l'eventuale file.
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+---------------
+
+PDF
+
+aggiungiamo la strutture delle pagine, 
+la possibilita di scorrere le pagine, di generare il pdf della singola pagina,
+di generare il pdf finale del documento.
+Per la genrazione del pdf finale , 2 interruttori toggle "includi copertina" e "includi fine documento".
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+
+Nella pagina del catalogo, a sinistra del titolo "Articoli per il catalogo", mettere una freccia verso sx che rimanda a /fant-cataloghi
+
+
+nella main-sidebar , a fianco del titolo "Catalogo" aggiungi icona hamburger per restringere la sidebar con le sole icone o allargare 
+a come è ora, per gestire recuper spazio.
+
+
+in "Sezione e articoli", nella editor-sidebar aggiungiamo un nuovo tab "Sezione" con i seguenti campi:
+ - Nome Sezione
+ - pulsante Aggiungi
+
+
+in "Sezione e articoli",  nella sezione main, a fianco al titolo "Sezione e articoli" aggiungiamo la possibilità
+di filtrare le sezioni/sottosezioni visibili (default tutte ). 
+
+
+in settings, aggiungiamo la possibilita di poter aggiungere un pdf ad inizio documento (copertina)
+ed uno a fine documento.
+Questi pdf verranno salvati nella cartella del catalogo corrispondente.
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+Per queste informazioni aggiungiamo una sezione sotto al titolo.
+Ci sono questi 2 nuovi campi con, per ogni riga, un pulsante per scegliere il file , ed uno per apreire in anteprima l'eventuale file.
+
+racchiudi questi dur campi in una sezione con cornice "Copertina e Fine documento"
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+Nel menu Cataloghi, il sottomenu "Copertine" diventa "Copertine/Retri". Aggiornare anhe i titoli della gestione.
+Spostare prima del sottomenu Catalghi.
+
+
+
+---------------
+
+Voglio ridurre le dimensioni del progetto /default.
+Sono partito da un progetto gia fatto e molte pagine non mi servono.
+Voglio eliminare le seguenti voci di menu dalla sidebar e le rispettive pagine collegate e quelle relative alle sottovoci di menu:
+ - Autenticazione
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+
+anche:
+ - Multilivello
+ - Le foprme
+ - Cruscotti
+ - Icone
+
+Vorre rimuovere anche il "Theme Customizer".
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+---------------
+
+in Cataloghi -> settings aggiungi una sezione con cornice "Sezione" dove impostiamo:
+ - colore sfondo
+ - colore testo
+ - dimensione testo
+
+
+
+In /fant-layout-articoli per "Articolo semplice" il layout che dobbiamo creare è questo dell'immagine.
+
+puoi verificare nel mio browsera aperto nella pagina "https://www.shopfantini.com/catalogo-terracotta-v2/"
+
+
+in "template layout" crea 2 tabs,
+la prima "Anteprima", con il contenuto attuale, 
+la seconda con "Ckeditor Classic Editor" ed il testo
+nel secondo aggiungi anche il bottone Salva, che salva eventuali modifiche e "Ripristina", che reimposta il default.
+
+
+per Copertine/Retri.
+Per ogni record aggiungere un pulsante che mi apre il dettaglio del record in una nuova pagina con rotta /codice
+
+Lo scopo è quello di creare un documento pdf di una o piu pagine che poi possa essere richiamato in un catalogo.
+
+il layout è sempre sidebar + main content.
+
+per creare il pdf diamo istruzioni con una chat di intelligenza artificiale.
+
+Crea una barra sotto al titolo dove informi su qauel ai è attiva (da settings -> Ai)
+
+
+nela sidebar:
+  - Allegati: la possibilita di caricare degli allegati che vengono salvati nella cartella dedicata al record. specificare percorso ed un nome. il nome viene usato nella chat 
+  - Articoli: struttura per richiare un singolo articolo o gli articoli di una categoria/sottocaategoria. viene salvalto l'elenco, poi i nomi possono essere usati nella chat.
+  - Chat: chat per dare le istruzioni per generare il documento. ci deve essere anche una rea di anteprima.
+
+Analizza il proegtto e verifica la fattibilità senza fare modifiche.
+
+---------------
+
+

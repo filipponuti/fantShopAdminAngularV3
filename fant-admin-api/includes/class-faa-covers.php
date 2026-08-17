@@ -3,7 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 
 final class Fant_Admin_API_V4_Covers {
-	private const SCHEMA_VERSION = 1;
+	private const SCHEMA_VERSION = 2;
 	private const MAX_FILE_SIZE = 20971520;
 
 	public static function all() {
@@ -54,9 +54,11 @@ final class Fant_Admin_API_V4_Covers {
 		$now = gmdate( 'c' );
 		$data = array(
 			'schemaVersion' => self::SCHEMA_VERSION,
-			'testata' => array( 'codice' => $code, 'nome' => $name, 'createdAt' => $now, 'updatedAt' => $now ),
-			'pdf' => array(),
-			'allegati' => array(),
+			'testata'       => array( 'codice' => $code, 'nome' => $name, 'createdAt' => $now, 'updatedAt' => $now ),
+			'pdf'           => array(),
+			'allegati'      => array(),
+			'articoli'      => array(),
+			'chat'          => self::default_chat(),
 		);
 		$pdf = self::generate_pdf( $code, $name, $pdf_name );
 		if ( is_wp_error( $pdf ) ) {
@@ -128,8 +130,10 @@ final class Fant_Admin_API_V4_Covers {
 				return self::error( 'cover_upload_failed', 'Impossibile salvare uno degli allegati.', 500 );
 			}
 			$data['allegati'][] = array(
-				'nome' => $name,
-				'tipo' => sanitize_mime_type( (string) $filetype['type'] ),
+				'nome'       => $name,
+				'alias'      => self::default_alias( $name ),
+				'percorso'   => self::attachment_relative_path( $code, $name ),
+				'tipo'       => sanitize_mime_type( (string) $filetype['type'] ),
 				'dimensione' => (int) $file['size'],
 				'uploadedAt' => gmdate( 'c' ),
 			);
@@ -137,7 +141,101 @@ final class Fant_Admin_API_V4_Covers {
 		$data['testata']['updatedAt'] = gmdate( 'c' );
 		$path = self::json_path( $code );
 		$result = is_wp_error( $path ) ? $path : self::write( $path, $data );
-		return is_wp_error( $result ) ? $result : self::summary( $data );
+		return is_wp_error( $result ) ? $result : self::normalize_cover( $data );
+	}
+
+	public static function update_attachment( string $code, string $file_name, string $alias ) {
+		$data = self::find( $code );
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+		$file_name = sanitize_file_name( $file_name );
+		$alias     = trim( sanitize_text_field( $alias ) );
+		if ( '' === $file_name || '' === $alias ) {
+			return self::error( 'cover_attachment_invalid', 'Nome file e nome chat (alias) sono obbligatori.', 422 );
+		}
+
+		$found = false;
+		foreach ( $data['allegati'] as &$item ) {
+			if ( ! is_array( $item ) || (string) ( $item['nome'] ?? '' ) !== $file_name ) {
+				continue;
+			}
+			$item['alias']    = $alias;
+			$item['percorso'] = self::attachment_relative_path( $code, $file_name );
+			$found            = true;
+			break;
+		}
+		unset( $item );
+
+		if ( ! $found ) {
+			return self::error( 'cover_attachment_not_found', 'Allegato non trovato.', 404 );
+		}
+
+		$data['schemaVersion']           = self::SCHEMA_VERSION;
+		$data['testata']['updatedAt']    = gmdate( 'c' );
+		$path                            = self::json_path( $code );
+		$result                          = is_wp_error( $path ) ? $path : self::write( $path, $data );
+		return is_wp_error( $result ) ? $result : self::normalize_cover( $data );
+	}
+
+	public static function delete_attachment( string $code, string $file_name ) {
+		$data = self::find( $code );
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+		$file_name = sanitize_file_name( $file_name );
+		if ( '' === $file_name ) {
+			return self::error( 'cover_attachment_invalid', 'Nome file non valido.', 422 );
+		}
+
+		$kept   = array();
+		$found  = false;
+		foreach ( $data['allegati'] as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			if ( (string) ( $item['nome'] ?? '' ) === $file_name ) {
+				$found = true;
+				continue;
+			}
+			$kept[] = $item;
+		}
+		if ( ! $found ) {
+			return self::error( 'cover_attachment_not_found', 'Allegato non trovato.', 404 );
+		}
+
+		$directory = self::attachment_directory( $code, false );
+		if ( ! is_wp_error( $directory ) ) {
+			$path = trailingslashit( $directory ) . $file_name;
+			if ( is_file( $path ) ) {
+				@unlink( $path );
+			}
+		}
+
+		$data['allegati']                = $kept;
+		$data['schemaVersion']           = self::SCHEMA_VERSION;
+		$data['testata']['updatedAt']    = gmdate( 'c' );
+		$json_path                       = self::json_path( $code );
+		$result                          = is_wp_error( $json_path ) ? $json_path : self::write( $json_path, $data );
+		return is_wp_error( $result ) ? $result : self::normalize_cover( $data );
+	}
+
+	public static function update_articoli( string $code, $articoli ) {
+		$data = self::find( $code );
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+		$normalized = self::normalize_articoli( $articoli );
+		if ( is_wp_error( $normalized ) ) {
+			return $normalized;
+		}
+
+		$data['articoli']                = $normalized;
+		$data['schemaVersion']           = self::SCHEMA_VERSION;
+		$data['testata']['updatedAt']    = gmdate( 'c' );
+		$path                            = self::json_path( $code );
+		$result                          = is_wp_error( $path ) ? $path : self::write( $path, $data );
+		return is_wp_error( $result ) ? $result : self::normalize_cover( $data );
 	}
 
 	public static function pdf( string $code ) {
@@ -327,7 +425,144 @@ final class Fant_Admin_API_V4_Covers {
 
 	private static function read( string $path ) {
 		$data = json_decode( (string) file_get_contents( $path ), true );
-		return is_array( $data ) && isset( $data['testata'], $data['pdf'], $data['allegati'] ) ? $data : self::error( 'cover_json_invalid', 'Il file della copertina non è valido.', 500 );
+		if ( ! is_array( $data ) || ! isset( $data['testata'], $data['pdf'], $data['allegati'] ) ) {
+			return self::error( 'cover_json_invalid', 'Il file della copertina non è valido.', 500 );
+		}
+		return self::normalize_cover( $data );
+	}
+
+	/** @param array<string, mixed> $data */
+	private static function normalize_cover( array $data ): array {
+		$code = (string) ( $data['testata']['codice'] ?? '' );
+		$allegati = array();
+		foreach ( is_array( $data['allegati'] ?? null ) ? $data['allegati'] : array() as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$nome = (string) ( $item['nome'] ?? '' );
+			if ( '' === $nome ) {
+				continue;
+			}
+			$alias = trim( (string) ( $item['alias'] ?? '' ) );
+			$allegati[] = array(
+				'nome'       => $nome,
+				'alias'      => '' !== $alias ? $alias : self::default_alias( $nome ),
+				'percorso'   => self::attachment_relative_path( $code, $nome ),
+				'tipo'       => (string) ( $item['tipo'] ?? '' ),
+				'dimensione' => (int) ( $item['dimensione'] ?? 0 ),
+				'uploadedAt' => (string) ( $item['uploadedAt'] ?? '' ),
+			);
+		}
+
+		$articoli = self::normalize_articoli( $data['articoli'] ?? array() );
+		if ( is_wp_error( $articoli ) ) {
+			$articoli = array();
+		}
+
+		$chat = is_array( $data['chat'] ?? null ) ? $data['chat'] : self::default_chat();
+		if ( ! isset( $chat['messages'] ) || ! is_array( $chat['messages'] ) ) {
+			$chat['messages'] = array();
+		}
+		if ( ! array_key_exists( 'previewHtml', $chat ) ) {
+			$chat['previewHtml'] = null;
+		}
+
+		$data['schemaVersion'] = self::SCHEMA_VERSION;
+		$data['allegati']      = $allegati;
+		$data['articoli']      = $articoli;
+		$data['chat']          = $chat;
+		return $data;
+	}
+
+	/** @return array{messages: array, previewHtml: null} */
+	private static function default_chat(): array {
+		return array(
+			'messages'    => array(),
+			'previewHtml' => null,
+		);
+	}
+
+	private static function default_alias( string $file_name ): string {
+		$base = pathinfo( $file_name, PATHINFO_FILENAME );
+		$base = is_string( $base ) && '' !== $base ? $base : $file_name;
+		return sanitize_text_field( $base );
+	}
+
+	private static function attachment_relative_path( string $code, string $file_name ): string {
+		return 'fant-admin-api/copertine_allegati/' . $code . '/' . $file_name;
+	}
+
+	/**
+	 * @param mixed $articoli
+	 * @return array<int, array<string, mixed>>|WP_Error
+	 */
+	private static function normalize_articoli( $articoli ) {
+		if ( ! is_array( $articoli ) ) {
+			return self::error( 'cover_articoli_invalid', 'articoli deve essere un array.', 400 );
+		}
+
+		$result = array();
+		$seen   = array();
+		foreach ( $articoli as $item ) {
+			if ( ! is_array( $item ) ) {
+				return self::error( 'cover_articoli_invalid', 'Ogni articolo deve essere un oggetto.', 400 );
+			}
+			$tipo = sanitize_key( (string) ( $item['tipo'] ?? '' ) );
+			if ( ! in_array( $tipo, array( 'product', 'category' ), true ) ) {
+				return self::error( 'cover_articoli_invalid', 'tipo articolo non valido (product|category).', 422 );
+			}
+
+			$alias = trim( sanitize_text_field( (string) ( $item['alias'] ?? $item['nome'] ?? '' ) ) );
+			$nome  = trim( sanitize_text_field( (string) ( $item['nome'] ?? '' ) ) );
+			if ( '' === $nome ) {
+				return self::error( 'cover_articoli_invalid', 'nome articolo obbligatorio.', 422 );
+			}
+			if ( '' === $alias ) {
+				$alias = $nome;
+			}
+
+			if ( 'product' === $tipo ) {
+				$product_id = (int) ( $item['productId'] ?? 0 );
+				$sku        = trim( sanitize_text_field( (string) ( $item['sku'] ?? '' ) ) );
+				if ( $product_id <= 0 || '' === $sku ) {
+					return self::error( 'cover_articoli_invalid', 'productId e sku obbligatori per tipo product.', 422 );
+				}
+				$key = 'p:' . $product_id;
+				if ( isset( $seen[ $key ] ) ) {
+					continue;
+				}
+				$seen[ $key ] = true;
+				$result[]     = array(
+					'id'        => (string) ( $item['id'] ?? ( 'p-' . $product_id ) ),
+					'tipo'      => 'product',
+					'productId' => $product_id,
+					'sku'       => $sku,
+					'nome'      => $nome,
+					'alias'     => $alias,
+				);
+				continue;
+			}
+
+			$category_id = (int) ( $item['categoryId'] ?? 0 );
+			if ( $category_id <= 0 ) {
+				return self::error( 'cover_articoli_invalid', 'categoryId obbligatorio per tipo category.', 422 );
+			}
+			$key = 'c:' . $category_id;
+			if ( isset( $seen[ $key ] ) ) {
+				continue;
+			}
+			$seen[ $key ] = true;
+			$result[]     = array(
+				'id'              => (string) ( $item['id'] ?? ( 'c-' . $category_id ) ),
+				'tipo'            => 'category',
+				'categoryId'      => $category_id,
+				'includeChildren' => ! empty( $item['includeChildren'] ),
+				'nome'            => $nome,
+				'alias'           => $alias,
+			);
+		}
+
+		return $result;
 	}
 
 	private static function write( string $path, array $data ) {

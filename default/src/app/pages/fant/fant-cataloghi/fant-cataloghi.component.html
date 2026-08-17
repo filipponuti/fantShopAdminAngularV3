@@ -69,6 +69,9 @@
                     <td>{{ catalog.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
                     <td class="text-end">
                       <div class="hstack gap-2 justify-content-end">
+                        <button type="button" class="btn btn-sm btn-ghost-info" title="Articoli" (click)="openArticoli(catalog)">
+                          <i class="ri-list-check-2 fs-16"></i>
+                        </button>
                         <button type="button" class="btn btn-sm btn-ghost-primary" title="Modifica" (click)="openEdit(catalog, catalogModal)">
                           <i class="ri-pencil-fill fs-16"></i>
                         </button>

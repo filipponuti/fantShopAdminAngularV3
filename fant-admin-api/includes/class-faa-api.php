@@ -9,6 +9,189 @@ final class Fant_Admin_API_V4_REST {
 
 	public static function init(): void {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+		add_action( 'rest_api_init', array( __CLASS__, 'register_cors' ), 15 );
+		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'handle_preflight' ), 10, 3 );
+		add_filter( 'rest_authentication_errors', array( __CLASS__, 'allow_options_without_auth' ), 20 );
+		add_filter( 'rest_post_dispatch', array( __CLASS__, 'attach_cors_to_response' ), 10, 3 );
+	}
+
+	/**
+	 * Le preflight OPTIONS non devono richiedere Bearer token.
+	 *
+	 * @param mixed $result
+	 * @return mixed
+	 */
+	public static function allow_options_without_auth( $result ) {
+		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'OPTIONS' === strtoupper( (string) $_SERVER['REQUEST_METHOD'] ) && self::request_uri_is_fant_admin() ) {
+			return true;
+		}
+		return $result;
+	}
+
+	public static function register_cors(): void {
+		// Serve la risposta dopo aver pulito eventuali BOM/output prematuri
+		// che impediscono di impostare Access-Control-* (sintomo: Content-Type text/html).
+		add_filter( 'rest_pre_serve_request', array( __CLASS__, 'serve_with_cors' ), 5, 4 );
+	}
+
+	/**
+	 * @param WP_HTTP_Response $response
+	 * @param WP_REST_Server   $server
+	 * @param WP_REST_Request  $request
+	 * @return WP_HTTP_Response
+	 */
+	public static function attach_cors_to_response( $response, $server, $request ) {
+		if ( ! ( $request instanceof WP_REST_Request ) || ! self::is_fant_admin_request( $request ) ) {
+			return $response;
+		}
+		if ( ! ( $response instanceof WP_HTTP_Response ) ) {
+			return $response;
+		}
+
+		$origin = self::allowed_origin();
+		if ( '' === $origin ) {
+			return $response;
+		}
+
+		$response->header( 'Access-Control-Allow-Origin', $origin );
+		$response->header( 'Access-Control-Allow-Credentials', 'true' );
+		$response->header( 'Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PUT, PATCH, DELETE' );
+		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-Requested-With, Accept' );
+		$response->header( 'Access-Control-Expose-Headers', 'X-WP-Total, X-WP-TotalPages' );
+		$response->header( 'Access-Control-Max-Age', '600' );
+		$response->header( 'Vary', 'Origin', false );
+
+		return $response;
+	}
+
+	/**
+	 * Risponde alle preflight OPTIONS per fant-admin/v1 (Authorization da Angular).
+	 *
+	 * @param mixed           $result
+	 * @param WP_REST_Server  $server
+	 * @param WP_REST_Request $request
+	 * @return mixed|WP_REST_Response
+	 */
+	public static function handle_preflight( $result, $server, $request ) {
+		if ( ! self::is_fant_admin_request( $request ) ) {
+			return $result;
+		}
+
+		if ( 'OPTIONS' === $request->get_method() ) {
+			$response = new WP_REST_Response( null, 204 );
+			$response = self::attach_cors_to_response( $response, $server, $request );
+			$response->header( 'Content-Length', '0' );
+			return $response;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * @param bool             $served
+	 * @param WP_HTTP_Response $result
+	 * @param WP_REST_Request  $request
+	 * @param WP_REST_Server   $server
+	 * @return bool
+	 */
+	public static function serve_with_cors( $served, $result, $request, $server ) {
+		if ( ! ( $request instanceof WP_REST_Request ) || ! self::is_fant_admin_request( $request ) ) {
+			return $served;
+		}
+
+		// Rimuove output accidentale (BOM UTF-8, whitespace) già inviato da altri file.
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+
+		$result = self::attach_cors_to_response( $result, $server, $request );
+
+		// Replica il serve nativo WP ma dopo aver pulito i buffer.
+		$origin = self::allowed_origin();
+		if ( '' !== $origin && ! headers_sent() ) {
+			header( 'Access-Control-Allow-Origin: ' . $origin );
+			header( 'Access-Control-Allow-Credentials: true' );
+			header( 'Access-Control-Allow-Methods: OPTIONS, GET, POST, PUT, PATCH, DELETE' );
+			header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce, X-Requested-With, Accept' );
+			header( 'Access-Control-Expose-Headers: X-WP-Total, X-WP-TotalPages' );
+			header( 'Access-Control-Max-Age: 600' );
+			header( 'Vary: Origin', false );
+		}
+
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: application/json; charset=UTF-8' );
+		}
+
+		$data = $result->get_data();
+		$json = wp_json_encode( $data );
+		if ( false === $json ) {
+			$status = $result->get_status();
+			status_header( $status ? (int) $status : 500 );
+			echo '{"code":"faa_json_encode_failed","message":"Impossibile serializzare la risposta.","data":{"status":500}}';
+			return true;
+		}
+
+		$status = $result->get_status();
+		if ( $status ) {
+			status_header( (int) $status );
+		}
+
+		foreach ( $result->get_headers() as $key => $value ) {
+			if ( is_array( $value ) ) {
+				foreach ( $value as $item ) {
+					header( sprintf( '%s: %s', $key, $item ), false );
+				}
+			} else {
+				header( sprintf( '%s: %s', $key, $value ) );
+			}
+		}
+
+		echo $json;
+		return true;
+	}
+
+	private static function allowed_origin(): string {
+		$origin = get_http_origin();
+		if ( ! is_string( $origin ) || '' === $origin ) {
+			$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? trim( wp_unslash( (string) $_SERVER['HTTP_ORIGIN'] ) ) : '';
+		}
+		if ( '' === $origin || 'null' === $origin ) {
+			return '';
+		}
+
+		/**
+		 * Origini CORS aggiuntive. Di default si riflette qualsiasi Origin
+		 * (come fa WordPress REST), perché le route sono già protette da auth admin.
+		 *
+		 * @param string[] $allowed
+		 * @param string   $origin
+		 */
+		$allowed = apply_filters( 'faa_cors_allowed_origins', array( '*' ), $origin );
+		if ( ! is_array( $allowed ) ) {
+			$allowed = array( '*' );
+		}
+
+		if ( in_array( '*', $allowed, true ) ) {
+			return $origin;
+		}
+
+		foreach ( $allowed as $candidate ) {
+			if ( is_string( $candidate ) && 0 === strcasecmp( rtrim( $candidate, '/' ), rtrim( $origin, '/' ) ) ) {
+				return $origin;
+			}
+		}
+
+		return '';
+	}
+
+	private static function is_fant_admin_request( WP_REST_Request $request ): bool {
+		$route = (string) $request->get_route();
+		return str_starts_with( $route, '/' . self::API_NAMESPACE );
+	}
+
+	private static function request_uri_is_fant_admin(): bool {
+		$uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+		return false !== strpos( $uri, '/wp-json/' . self::API_NAMESPACE );
 	}
 
 	public static function register_routes(): void {
@@ -54,6 +237,8 @@ final class Fant_Admin_API_V4_REST {
 				),
 			)
 		);
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/contenuto', 'PUT', 'update_catalog_contenuto' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/settings', 'PUT', 'update_catalog_settings' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::READABLE, 'catalog' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_catalog' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_catalog' );
@@ -78,10 +263,19 @@ final class Fant_Admin_API_V4_REST {
 		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_cover' );
 		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_cover' );
 		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)/attachments', WP_REST_Server::CREATABLE, 'upload_cover_attachments' );
+		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)/attachments/(?P<fileName>[^/]+)', 'PUT', 'update_cover_attachment' );
+		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)/attachments/(?P<fileName>[^/]+)', WP_REST_Server::DELETABLE, 'delete_cover_attachment' );
+		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)/articoli', 'PUT', 'update_cover_articoli' );
 		self::route( '/covers/(?P<coverCode>[a-zA-Z0-9_-]+)/pdf', WP_REST_Server::READABLE, 'cover_pdf' );
+
+		self::route( '/layouts', WP_REST_Server::READABLE, 'layouts' );
+		self::route( '/layouts/(?P<layoutCode>[a-zA-Z0-9_-]+)', WP_REST_Server::READABLE, 'layout' );
+		self::route( '/layouts/(?P<layoutCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_layout' );
 
 		self::route( '/settings/ai', WP_REST_Server::READABLE, 'ai_settings' );
 		self::route( '/settings/ai', 'PUT', 'update_ai_settings' );
+
+		self::route( '/products', WP_REST_Server::READABLE, 'products' );
 	}
 
 	private static function route( string $path, string $methods, string $callback, $permission = null ): void {
@@ -425,6 +619,30 @@ final class Fant_Admin_API_V4_REST {
 		);
 	}
 
+	public static function update_catalog_contenuto( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Catalogs::update_contenuto(
+				strtolower( (string) $request['catalogCode'] ),
+				$params['prodotti'] ?? null
+			)
+		);
+	}
+
+	public static function update_catalog_settings( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Catalogs::update_settings(
+				strtolower( (string) $request['catalogCode'] ),
+				$params
+			)
+		);
+	}
+
 	public static function delete_catalog( WP_REST_Request $request ) {
 		$result = Fant_Admin_API_V4_Catalogs::delete( (string) $request['catalogCode'] );
 		if ( is_wp_error( $result ) ) {
@@ -477,9 +695,75 @@ final class Fant_Admin_API_V4_REST {
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
 
+	public static function update_cover_attachment( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Covers::update_attachment(
+				(string) $request['coverCode'],
+				rawurldecode( (string) $request['fileName'] ),
+				(string) ( $params['alias'] ?? '' )
+			)
+		);
+	}
+
+	public static function delete_cover_attachment( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Covers::delete_attachment(
+			(string) $request['coverCode'],
+			rawurldecode( (string) $request['fileName'] )
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function update_cover_articoli( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Covers::update_articoli(
+				(string) $request['coverCode'],
+				$params['articoli'] ?? null
+			)
+		);
+	}
+
 	public static function cover_pdf( WP_REST_Request $request ) {
 		$result = Fant_Admin_API_V4_Covers::pdf( (string) $request['coverCode'] );
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function layouts() {
+		return rest_ensure_response( Fant_Admin_API_V4_Layouts::all() );
+	}
+
+	public static function layout( WP_REST_Request $request ) {
+		return rest_ensure_response( Fant_Admin_API_V4_Layouts::find( (string) $request['layoutCode'] ) );
+	}
+
+	public static function update_layout( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Layouts::update(
+				(string) $request['layoutCode'],
+				$params
+			)
+		);
+	}
+
+	public static function products( WP_REST_Request $request ) {
+		$category_id = (int) $request->get_param( 'categoryId' );
+		if ( $category_id > 0 ) {
+			$include = ! in_array( strtolower( (string) $request->get_param( 'includeChildren' ) ), array( '0', 'false' ), true );
+			return rest_ensure_response( Fant_Admin_API_V4_Products::by_category( $category_id, $include ) );
+		}
+		return rest_ensure_response(
+			Fant_Admin_API_V4_Products::search(
+				(string) $request->get_param( 'search' ),
+				(int) ( $request->get_param( 'page' ) ?: 1 ),
+				(int) ( $request->get_param( 'perPage' ) ?: 20 )
+			)
+		);
 	}
 
 	public static function ai_settings(): WP_REST_Response {

@@ -73,6 +73,7 @@ final class Fant_Admin_API_V4_Catalogs {
 				'createdAt' => $now,
 				'updatedAt' => $now,
 			),
+			'settings'      => self::default_settings(),
 			'prodotti'      => array(),
 		);
 
@@ -109,6 +110,221 @@ final class Fant_Admin_API_V4_Catalogs {
 		self::rebuild_index();
 
 		return self::summary( $catalog );
+	}
+
+	public static function update_contenuto( string $code, $prodotti ) {
+		$catalog = self::find( $code );
+		if ( is_wp_error( $catalog ) ) {
+			return $catalog;
+		}
+		$normalized = self::normalize_prodotti( $prodotti );
+		if ( is_wp_error( $normalized ) ) {
+			return $normalized;
+		}
+
+		$catalog['prodotti']             = $normalized;
+		$catalog['schemaVersion']        = 2;
+		$catalog['testata']['updatedAt'] = gmdate( 'c' );
+		$path = self::catalog_path( $code );
+		if ( is_wp_error( $path ) ) {
+			return $path;
+		}
+
+		$result = self::write( $path, $catalog );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		self::rebuild_index();
+
+		return self::summary( $catalog );
+	}
+
+	public static function update_settings( string $code, $settings ) {
+		$catalog = self::find( $code );
+		if ( is_wp_error( $catalog ) ) {
+			return $catalog;
+		}
+		$normalized = self::normalize_settings( $settings );
+		if ( is_wp_error( $normalized ) ) {
+			return $normalized;
+		}
+
+		$catalog['settings']             = $normalized;
+		$catalog['testata']['updatedAt'] = gmdate( 'c' );
+		$path = self::catalog_path( $code );
+		if ( is_wp_error( $path ) ) {
+			return $path;
+		}
+
+		$result = self::write( $path, $catalog );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		self::rebuild_index();
+
+		return self::summary( $catalog );
+	}
+
+	/** @return array<string, mixed> */
+	public static function default_settings(): array {
+		return array(
+			'sezione' => array(
+				'backgroundColor' => '#C6B2B3',
+				'textColor'       => '#333333',
+				'fontSize'        => 15,
+			),
+		);
+	}
+
+	/**
+	 * @param mixed $settings
+	 * @return array<string, mixed>|WP_Error
+	 */
+	public static function normalize_settings( $settings ) {
+		if ( ! is_array( $settings ) ) {
+			return self::error( 'catalog_settings_invalid', 'settings deve essere un oggetto.', 400 );
+		}
+
+		$defaults = self::default_settings();
+		$sezione  = is_array( $settings['sezione'] ?? null ) ? $settings['sezione'] : array();
+
+		$background = self::valid_hex_color( (string) ( $sezione['backgroundColor'] ?? $defaults['sezione']['backgroundColor'] ) );
+		if ( is_wp_error( $background ) ) {
+			return $background;
+		}
+		$text = self::valid_hex_color( (string) ( $sezione['textColor'] ?? $defaults['sezione']['textColor'] ) );
+		if ( is_wp_error( $text ) ) {
+			return $text;
+		}
+		$size = (int) ( $sezione['fontSize'] ?? $defaults['sezione']['fontSize'] );
+		if ( $size < 8 || $size > 48 ) {
+			return self::error( 'catalog_settings_invalid', 'La dimensione testo deve essere tra 8 e 48.', 422 );
+		}
+
+		return array(
+			'sezione' => array(
+				'backgroundColor' => strtoupper( $background ),
+				'textColor'       => strtoupper( $text ),
+				'fontSize'        => $size,
+			),
+		);
+	}
+
+	/**
+	 * @param string $color
+	 * @return string|WP_Error
+	 */
+	private static function valid_hex_color( string $color ) {
+		$color = trim( $color );
+		if ( preg_match( '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $color ) ) {
+			if ( 4 === strlen( $color ) ) {
+				return '#' . $color[1] . $color[1] . $color[2] . $color[2] . $color[3] . $color[3];
+			}
+			return $color;
+		}
+
+		return self::error( 'catalog_settings_invalid', 'Colore non valido: usare formato #RGB o #RRGGBB.', 422 );
+	}
+
+	public static function normalize_prodotti( $prodotti ) {
+		if ( ! is_array( $prodotti ) ) {
+			return self::error( 'catalog_contenuto_invalid', 'prodotti deve essere un array.', 400 );
+		}
+
+		$sections = array();
+		foreach ( $prodotti as $section ) {
+			if ( ! is_array( $section ) ) {
+				return self::error( 'catalog_contenuto_invalid', 'Ogni sezione deve essere un oggetto.', 400 );
+			}
+
+			$category_id = (int) ( $section['categoryId'] ?? 0 );
+			$nome        = trim( sanitize_text_field( (string) ( $section['nome'] ?? '' ) ) );
+			if ( $category_id < 0 || '' === $nome ) {
+				return self::error( 'catalog_contenuto_invalid', 'Nome sezione obbligatorio; categoryId non valido.', 400 );
+			}
+
+			$articoli_in = $section['articoli'] ?? array();
+			if ( ! is_array( $articoli_in ) ) {
+				return self::error( 'catalog_contenuto_invalid', 'articoli deve essere un array.', 400 );
+			}
+
+			$articoli = array();
+			$seen_sku = array();
+			foreach ( $articoli_in as $articolo ) {
+				if ( ! is_array( $articolo ) ) {
+					return self::error( 'catalog_contenuto_invalid', 'Ogni articolo deve essere un oggetto.', 400 );
+				}
+
+				$normalized = self::normalize_articolo( $articolo, $seen_sku, true );
+				if ( is_wp_error( $normalized ) ) {
+					return $normalized;
+				}
+				if ( null === $normalized ) {
+					continue;
+				}
+				$articoli[] = $normalized;
+			}
+
+			$sections[] = array(
+				'categoryId'  => $category_id,
+				'nome'        => $nome,
+				'saltoPagina' => ! empty( $section['saltoPagina'] ),
+				'articoli'    => $articoli,
+			);
+		}
+
+		return $sections;
+	}
+
+	/**
+	 * @param array $articolo
+	 * @param array $seen_sku
+	 * @param bool  $allow_variations
+	 * @return array|null|WP_Error
+	 */
+	private static function normalize_articolo( array $articolo, array &$seen_sku, bool $allow_variations ) {
+		$product_id = (int) ( $articolo['productId'] ?? 0 );
+		$sku        = trim( sanitize_text_field( (string) ( $articolo['sku'] ?? '' ) ) );
+		$anome      = trim( sanitize_text_field( (string) ( $articolo['nome'] ?? '' ) ) );
+		if ( $product_id <= 0 || '' === $sku || '' === $anome ) {
+			return self::error( 'catalog_contenuto_invalid', 'productId, sku e nome articolo sono obbligatori.', 400 );
+		}
+
+		$key = strtolower( $sku );
+		if ( isset( $seen_sku[ $key ] ) ) {
+			return null;
+		}
+		$seen_sku[ $key ] = true;
+
+		$normalized = array(
+			'productId'   => $product_id,
+			'sku'         => $sku,
+			'nome'        => $anome,
+			'saltoPagina' => ! empty( $articolo['saltoPagina'] ),
+		);
+
+		if ( $allow_variations ) {
+			$variazioni_in = $articolo['variazioni'] ?? array();
+			if ( ! is_array( $variazioni_in ) ) {
+				return self::error( 'catalog_contenuto_invalid', 'variazioni deve essere un array.', 400 );
+			}
+			$variazioni = array();
+			foreach ( $variazioni_in as $variazione ) {
+				if ( ! is_array( $variazione ) ) {
+					return self::error( 'catalog_contenuto_invalid', 'Ogni variazione deve essere un oggetto.', 400 );
+				}
+				$child = self::normalize_articolo( $variazione, $seen_sku, false );
+				if ( is_wp_error( $child ) ) {
+					return $child;
+				}
+				if ( null !== $child ) {
+					$variazioni[] = $child;
+				}
+			}
+			$normalized['variazioni'] = $variazioni;
+		}
+
+		return $normalized;
 	}
 
 	public static function delete( string $code ) {
@@ -201,6 +417,11 @@ final class Fant_Admin_API_V4_Catalogs {
 			return self::error( 'catalog_json_invalid', 'Il file ' . basename( $path ) . ' non contiene un catalogo valido.', 500 );
 		}
 
+		$normalized_settings = self::normalize_settings( $data['settings'] ?? self::default_settings() );
+		$data['settings']    = is_wp_error( $normalized_settings )
+			? self::default_settings()
+			: $normalized_settings;
+
 		return $data;
 	}
 
@@ -228,13 +449,31 @@ final class Fant_Admin_API_V4_Catalogs {
 
 	private static function summary( array $catalog ): array {
 		$header   = $catalog['testata'];
-		$products = $catalog['prodotti'];
+		$products = is_array( $catalog['prodotti'] ?? null ) ? $catalog['prodotti'] : array();
+		$count    = 0;
+		foreach ( $products as $section ) {
+			if ( is_array( $section ) && isset( $section['articoli'] ) && is_array( $section['articoli'] ) ) {
+				foreach ( $section['articoli'] as $articolo ) {
+					if ( ! is_array( $articolo ) ) {
+						continue;
+					}
+					++$count;
+					if ( isset( $articolo['variazioni'] ) && is_array( $articolo['variazioni'] ) ) {
+						$count += count( $articolo['variazioni'] );
+					}
+				}
+			}
+		}
+		if ( 0 === $count && $products && ! isset( $products[0]['articoli'] ) && ! isset( $products[0]['categoryId'] ) ) {
+			$count = count( $products );
+		}
+
 		return array(
-			'codice'          => (string) ( $header['codice'] ?? '' ),
-			'nome'            => (string) ( $header['nome'] ?? '' ),
-			'numeroProdotti'  => count( $products ),
-			'createdAt'       => (string) ( $header['createdAt'] ?? '' ),
-			'updatedAt'       => (string) ( $header['updatedAt'] ?? '' ),
+			'codice'         => (string) ( $header['codice'] ?? '' ),
+			'nome'           => (string) ( $header['nome'] ?? '' ),
+			'numeroProdotti' => $count,
+			'createdAt'      => (string) ( $header['createdAt'] ?? '' ),
+			'updatedAt'      => (string) ( $header['updatedAt'] ?? '' ),
 		);
 	}
 

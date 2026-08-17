@@ -13,6 +13,62 @@ export interface CoverSummary {
   updatedAt: string;
 }
 
+export interface CoverAllegato {
+  nome: string;
+  alias: string;
+  percorso: string;
+  tipo: string;
+  dimensione: number;
+  uploadedAt: string;
+}
+
+export interface CoverArticoloProduct {
+  id: string;
+  tipo: 'product';
+  productId: number;
+  sku: string;
+  nome: string;
+  alias: string;
+}
+
+export interface CoverArticoloCategory {
+  id: string;
+  tipo: 'category';
+  categoryId: number;
+  includeChildren: boolean;
+  nome: string;
+  alias: string;
+}
+
+export type CoverArticolo = CoverArticoloProduct | CoverArticoloCategory;
+
+export interface CoverChat {
+  messages: Array<{
+    id?: string;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    createdAt?: string;
+  }>;
+  previewHtml?: string | null;
+}
+
+export interface CoverDetail {
+  schemaVersion?: number;
+  testata: {
+    codice: string;
+    nome: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  pdf: {
+    nome: string;
+    generatedAt?: string;
+  };
+  allegati: CoverAllegato[];
+  articoli: CoverArticolo[];
+  chat?: CoverChat;
+}
+
 export interface CoverPayload {
   codice?: string;
   nome: string;
@@ -27,12 +83,16 @@ interface CoverPdf {
 
 @Injectable({ providedIn: 'root' })
 export class CoverService {
-  private readonly apiUrl = `${environment.siteUrl}/wp-json/${environment.apiNamespace}/covers`;
+  private readonly apiUrl = `${environment.siteUrl.replace(/\/$/, '')}/wp-json/${environment.apiNamespace}/covers`;
 
   constructor(private readonly http: HttpClient) {}
 
   list(): Observable<CoverSummary[]> {
     return this.http.get<CoverSummary[]>(this.apiUrl);
+  }
+
+  get(code: string): Observable<CoverDetail> {
+    return this.http.get<CoverDetail>(`${this.apiUrl}/${encodeURIComponent(code)}`);
   }
 
   create(payload: Required<CoverPayload>): Observable<CoverSummary> {
@@ -47,10 +107,30 @@ export class CoverService {
     return this.http.delete<void>(`${this.apiUrl}/${encodeURIComponent(code)}`);
   }
 
-  uploadAttachments(code: string, files: File[]): Observable<CoverSummary> {
+  uploadAttachments(code: string, files: File[]): Observable<CoverDetail> {
     const formData = new FormData();
     files.forEach(file => formData.append('files[]', file, file.name));
-    return this.http.post<CoverSummary>(`${this.apiUrl}/${encodeURIComponent(code)}/attachments`, formData);
+    return this.http.post<CoverDetail>(`${this.apiUrl}/${encodeURIComponent(code)}/attachments`, formData);
+  }
+
+  updateAttachmentAlias(code: string, fileName: string, alias: string): Observable<CoverDetail> {
+    return this.http.put<CoverDetail>(
+      `${this.apiUrl}/${encodeURIComponent(code)}/attachments/${encodeURIComponent(fileName)}`,
+      { alias },
+    );
+  }
+
+  deleteAttachment(code: string, fileName: string): Observable<CoverDetail> {
+    return this.http.delete<CoverDetail>(
+      `${this.apiUrl}/${encodeURIComponent(code)}/attachments/${encodeURIComponent(fileName)}`,
+    );
+  }
+
+  updateArticoli(code: string, articoli: CoverArticolo[]): Observable<CoverDetail> {
+    return this.http.put<CoverDetail>(
+      `${this.apiUrl}/${encodeURIComponent(code)}/articoli`,
+      { articoli },
+    );
   }
 
   downloadPdf(code: string): Observable<CoverPdf> {

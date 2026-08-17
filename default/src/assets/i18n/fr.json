@@ -8,6 +8,16 @@
     "MENU": {
       "TEXT": "MENU"
     },
+    "FANT": {
+      "HOME": "Accueil",
+      "SHOP": "Shop",
+      "CATEGORIES": "Categories",
+      "CATALOGS": "Catalogues",
+      "COVERS": "Couvertures",
+      "GENERAL": "General",
+      "SETTINGS": "Parametres",
+      "AI": "IA"
+    },
     "DASHBOARD": {
       "TEXT": "Tableaux de bord",
       "BADGE": "Nouvelle",

@@ -1,4 +1,4 @@
-<app-breadcrumbs title="Copertine" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
+<app-breadcrumbs title="Copertine/Retri" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
 
 @if (error) { <div class="alert alert-danger" role="alert">{{ error }}</div> }
 @if (success) { <div class="alert alert-success" role="status">{{ success }}</div> }
@@ -6,7 +6,7 @@
 <div class="card" id="coverList">
   <div class="card-header border-bottom-dashed">
     <div class="row g-4 align-items-center">
-      <div class="col-sm"><h5 class="card-title mb-0">Elenco copertine</h5></div>
+      <div class="col-sm"><h5 class="card-title mb-0">Elenco Copertine/Retri</h5></div>
       <div class="col-sm-auto">
         <button type="button" class="btn btn-success" (click)="openCreate(coverModal)">
           <i class="ri-add-line align-bottom me-1"></i> Nuova copertina
@@ -58,6 +58,9 @@
                 <td>{{ cover.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td class="text-end">
                   <div class="hstack gap-2 justify-content-end">
+                    <button type="button" class="btn btn-sm btn-ghost-info" title="Apri dettaglio" (click)="openDetail(cover)">
+                      <i class="ri-eye-fill fs-16"></i>
+                    </button>
                     <button type="button" class="btn btn-sm btn-ghost-success" title="Scarica PDF" [disabled]="downloadingCode === cover.codice" (click)="downloadPdf(cover)">
                       @if (downloadingCode === cover.codice) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="ri-download-2-line fs-16"></i> }
                     </button>
