@@ -168,11 +168,18 @@ final class Fant_Admin_API_V4_Products {
 				'order'     => 'ASC',
 				'return'    => 'objects',
 				'tax_query' => array(
+					'relation' => 'AND',
 					array(
 						'taxonomy' => 'product_cat',
 						'field'    => 'term_id',
 						'terms'    => $term_ids,
 						'operator' => 'IN',
+					),
+					array(
+						'taxonomy' => 'product_visibility',
+						'field'    => 'name',
+						'terms'    => array( 'exclude-from-catalog' ),
+						'operator' => 'NOT IN',
 					),
 				),
 			)

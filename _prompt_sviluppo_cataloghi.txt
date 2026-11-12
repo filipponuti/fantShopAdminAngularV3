@@ -1,0 +1,50 @@
+
+
+Analisi
+========
+
+Riepilogo lo sviluppo della parte Cataloghi. 
+
+Ci occupiano dello nuova funzionalità per la creazione di cataloghi.
+In questa cartella troviamo il plugin attuale sul server, con le configurazioni dei cataloghi:
+  - C:\DEV_FANTINI\fantShopAdminAngularV3\_fantini_cataloghi_online
+
+La configurazione dei pdf è nella sottocartella C:\DEV_FANTINI\fantShopAdminAngularV3\_fantini_cataloghi_online\pdf
+
+La configurazione dei salti pagina avvinene con una pagina wordpres col codice, ad esempio,
+[fantcatalogoanteprima categoria="Terracotta"]
+
+In questo momento, la generazione del pdf di un catalogo avviene aprendo in una pagina wordpress col codice, ad esempio:
+[fantcatalogo categoria="Terracotta"]
+
+Il pdf viene generato inviando a "Stampa su pdf" la pagina aperta.
+
+Vogliamo cambiare sistema.
+
+I pdf devono essere generati lato server.
+Inoltre per poter calcolare gli spazi e gli ingombri degli articoli in una pagina, devono essere definiti dei template di tipologia Articoli.
+
+Nella App abbiamo predisposto le seguenti voci di gestione:
+   - Cataloghi -> Layout Articoli
+   - Cataloghi -> Copertine/Retri
+   - Cataloghi -> Cataloghi
+
+
+Rispetto alla vecchia versione, nella versione che stiamo sviluppando voglio dare la possibilità
+di costruire cataloghi ancche con pochi articoli (ad esempio per un periodo festivo o una occasione speciale).
+
+
+
+ARCOBALENO.
+ARCOBALENO.
+Iniziamo col creare il catalogo Arcobaleno.
+Andiamo per step.
+Prima facciamo la Categoria CERAMICA->Serie; ci sono solo gli articoli semplici.
+L'immagine di esempio e dei primi 2 articoli nel vecchio catalogo.
+analizza
+
+
+
+
+
+

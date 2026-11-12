@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { finalize } from 'rxjs';
@@ -10,6 +11,13 @@ import {
   CatalogService,
   CatalogSezione,
 } from '../../../core/services/catalog.service';
+import { LayoutService } from '../../../core/services/layout.service';
+import { defaultLayoutHtml } from '../fant-layout-articoli-dettaglio/layout-template-defaults';
+import {
+  buildCatalogPdfDocument,
+  catalogPdfDocumentForPrint,
+  catalogPdfPageCount,
+} from './catalog-pdf-html';
 import { ProductItem, ProductService } from '../../../core/services/product.service';
 import {
   WooCategory,
@@ -20,7 +28,7 @@ interface CategoryNode extends WooCategory {
   children: CategoryNode[];
 }
 
-type CatalogEditorView = 'settings' | 'sezioni' | 'pdf';
+type CatalogEditorView = 'settings' | 'sezioni' | 'anteprima' | 'pdf';
 
 interface MissingCandidate {
   productId: number;
@@ -42,6 +50,7 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
   readonly mainNavItems: Array<{ id: CatalogEditorView; label: string; icon: string }> = [
     { id: 'settings', label: 'Settings', icon: 'ri-settings-3-line' },
     { id: 'sezioni', label: 'Sezioni e articoli', icon: 'ri-list-check-2' },
+    { id: 'anteprima', label: 'ANTEPRIMA', icon: 'ri-eye-line' },
     { id: 'pdf', label: 'PDF', icon: 'ri-file-pdf-2-line' },
   ];
 
@@ -72,6 +81,15 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
   selectedCategoryId: number | null = null;
   loadingCategories = false;
   loadingProducts = false;
+  previewLoading = false;
+  previewReady = false;
+  anteprimaRichiesta = false;
+  previewPageCount = 0;
+  previewUrl: SafeResourceUrl | null = null;
+  private previewHtml = '';
+  private previewObjectUrl: string | null = null;
+  private previewTicket = 0;
+  private layoutHeights = new Map<string, number>([['articolo-semplice', 220]]);
   searchTerm = '';
   searchResults: ProductItem[] = [];
   selectedProductIds = new Set<number>();
@@ -95,6 +113,8 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     private readonly products: ProductService,
     private readonly categories: WooCategoryService,
     private readonly modalService: NgbModal,
+    private readonly layouts?: LayoutService,
+    private readonly sanitizer?: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -105,6 +125,7 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     this.codice = this.route.snapshot.paramMap.get('codice') || '';
     this.load();
     this.loadCategories();
+    this.loadLayouts();
   }
 
   ngOnDestroy(): void {
@@ -112,6 +133,7 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
       clearTimeout(this.searchTimer);
       this.searchTimer = null;
     }
+    this.revokePreviewUrl();
   }
 
   load(): void {
@@ -125,7 +147,10 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     this.catalogs.get(this.codice).pipe(finalize(() => this.loading = false)).subscribe({
       next: catalog => {
         this.nome = catalog.testata.nome;
-        this.sezioni = catalog.prodotti;
+        this.sezioni = catalog.prodotti.map(section => ({
+          ...section,
+          articoli: section.articoli.map(articolo => this.withLayout(articolo)),
+        }));
         this.sezioneSettings = {
           backgroundColor: catalog.settings?.sezione?.backgroundColor || '#C6B2B3',
           textColor: catalog.settings?.sezione?.textColor || '#333333',
@@ -807,6 +832,9 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     this.activeView = view;
     this.error = '';
     this.success = '';
+    if (view === 'pdf') {
+      this.refreshPdfPreview();
+    }
   }
 
   toggleMainSidebar(): void {
@@ -818,7 +846,7 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
   }
 
   save(): void {
-    if (this.activeView === 'pdf') {
+    if (this.activeView === 'anteprima' || this.activeView === 'pdf') {
       this.error = '';
       this.success = 'Nessuna modifica da salvare.';
       return;
@@ -973,8 +1001,177 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
       sku,
       nome: product.name,
       saltoPagina: false,
+      layout: this.layoutForProduct(product, variazioni),
       variazioni,
     };
+  }
+
+  articleLayout(articolo: CatalogArticolo): string {
+    return articolo.layout || (!articolo.variazioni?.length ? 'articolo-semplice' : '');
+  }
+
+  articleHeight(articolo: CatalogArticolo): number | null {
+    const layout = this.articleLayout(articolo);
+    if (!layout) {
+      return null;
+    }
+    const height = this.layoutHeights.get(layout);
+    return height && height > 0 ? height : null;
+  }
+
+  get showUnsavedPdfNote(): boolean {
+    return this.sezioniDirty;
+  }
+
+  generaAnteprima(): void {
+    this.anteprimaRichiesta = true;
+    this.refreshPdfPreview();
+  }
+
+  generatePdf(): void {
+    if (!this.previewReady || !this.previewHtml) {
+      this.error = 'Anteprima non pronta.';
+      this.success = '';
+      return;
+    }
+
+    const opened = window.open('', '_blank');
+    if (!opened) {
+      this.error = 'Il browser ha bloccato l\'apertura del PDF.';
+      this.success = '';
+      return;
+    }
+
+    this.error = '';
+    this.success = '';
+    opened.document.open();
+    opened.document.write(catalogPdfDocumentForPrint(this.previewHtml));
+    opened.document.close();
+  }
+
+  private refreshPdfPreview(): void {
+    const ticket = ++this.previewTicket;
+    const codes = this.usedLayoutCodes();
+    const templates = new Map<string, string>();
+    for (const code of codes) {
+      templates.set(code, defaultLayoutHtml(code));
+    }
+    if (!codes.length || !this.layouts) {
+      this.publishPreview(templates, ticket);
+      return;
+    }
+
+    this.previewLoading = true;
+    let pending = codes.length;
+    for (const code of codes) {
+      this.layouts.get(code).subscribe({
+        next: detail => {
+          const saved = (detail.layout.htmlPreview || '').trim();
+          templates.set(code, saved || defaultLayoutHtml(code));
+          if (--pending === 0) {
+            this.publishPreview(templates, ticket);
+          }
+        },
+        error: () => {
+          if (--pending === 0) {
+            this.publishPreview(templates, ticket);
+          }
+        },
+      });
+    }
+  }
+
+  private usedLayoutCodes(): string[] {
+    const codes = new Set<string>();
+    for (const section of this.sezioni) {
+      for (const articolo of section.articoli) {
+        const layout = this.articleLayout(articolo);
+        if (layout) {
+          codes.add(layout);
+        }
+      }
+    }
+    return [...codes];
+  }
+
+  private publishPreview(layoutHtml: ReadonlyMap<string, string>, ticket: number): void {
+    if (ticket !== this.previewTicket) {
+      return;
+    }
+    const html = buildCatalogPdfDocument({
+      titolo: this.nome || this.codice || 'Catalogo',
+      codice: this.codice,
+      theme: { ...this.sezioneSettings },
+      sezioni: this.sezioni.map(section => ({
+        nome: section.nome,
+        saltoPagina: section.saltoPagina,
+        articoli: section.articoli.map(articolo => ({
+          sku: articolo.sku,
+          nome: articolo.nome,
+          saltoPagina: articolo.saltoPagina,
+          layout: this.articleLayout(articolo),
+          height: this.articleHeight(articolo) ?? 220,
+        })),
+      })),
+      layoutHtml,
+    });
+    this.previewHtml = html;
+    this.previewPageCount = catalogPdfPageCount(html);
+    this.previewReady = html.length > 0;
+    this.previewLoading = false;
+    if (!this.sanitizer) {
+      return;
+    }
+    this.revokePreviewUrl();
+    this.previewObjectUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.previewObjectUrl);
+  }
+
+  private revokePreviewUrl(): void {
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
+  }
+
+  private loadLayouts(): void {
+    this.layouts?.list().subscribe({
+      next: items => {
+        const heights = new Map<string, number>([['articolo-semplice', 220]]);
+        for (const item of items) {
+          if (item.minRowHeight == null) {
+            continue;
+          }
+          const height = Number(item.minRowHeight) || 0;
+          if (height > 0 || item.codice !== 'articolo-semplice') {
+            heights.set(item.codice, height);
+          }
+        }
+        this.layoutHeights = heights;
+        if (this.activeView === 'pdf' || (this.activeView === 'anteprima' && this.anteprimaRichiesta)) {
+          this.refreshPdfPreview();
+        }
+      },
+    });
+  }
+
+  private withLayout(articolo: CatalogArticolo, nested = false): CatalogArticolo {
+    const variazioni = articolo.variazioni?.map(item => this.withLayout(item, true));
+    if (nested) {
+      return { ...articolo, variazioni };
+    }
+    const layout = articolo.layout || (!variazioni?.length ? 'articolo-semplice' : undefined);
+    return { ...articolo, layout, variazioni };
+  }
+
+  private layoutForProduct(product: ProductItem, variazioni: CatalogArticolo[]): string | undefined {
+    if (product.type === 'variation') {
+      return undefined;
+    }
+    if (product.type === 'simple' || (!product.type && !variazioni.length)) {
+      return 'articolo-semplice';
+    }
+    return undefined;
   }
 
   private collectSectionProductIds(section: CatalogSezione): Set<number> {

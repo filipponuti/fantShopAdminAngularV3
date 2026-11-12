@@ -10,6 +10,7 @@ export interface LayoutSummary {
   family: string;
   showVariationImages: boolean;
   bancali: boolean;
+  minRowHeight: number;
   updatedAt: string;
 }
 
@@ -32,12 +33,14 @@ export interface LayoutDetail {
     };
     htmlPreview?: string | null;
     notes?: string;
+    minRowHeight?: number;
   };
 }
 
 export interface LayoutUpdatePayload {
   htmlPreview?: string | null;
   notes?: string;
+  minRowHeight?: number;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -30,3 +30,5 @@ yarn-error.log*
 
 /deploy-test/
 /catalogo_v1/
+
+/_sito_shop/

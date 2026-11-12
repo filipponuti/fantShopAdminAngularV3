@@ -303,6 +303,21 @@ final class Fant_Admin_API_V4_Catalogs {
 			'saltoPagina' => ! empty( $articolo['saltoPagina'] ),
 		);
 
+		$layout = trim( sanitize_text_field( (string) ( $articolo['layout'] ?? '' ) ) );
+		if ( '' !== $layout ) {
+			$allowed_layouts = array(
+				'articolo-semplice',
+				'articolo-variazioni-no-img',
+				'articolo-variazioni-img',
+				'nutrizione-sfuso',
+				'nutrizione-bancali',
+			);
+			if ( ! in_array( $layout, $allowed_layouts, true ) ) {
+				return self::error( 'catalog_contenuto_invalid', 'Layout articolo non valido.', 400 );
+			}
+			$normalized['layout'] = $layout;
+		}
+
 		if ( $allow_variations ) {
 			$variazioni_in = $articolo['variazioni'] ?? array();
 			if ( ! is_array( $variazioni_in ) ) {
@@ -341,6 +356,143 @@ final class Fant_Admin_API_V4_Catalogs {
 
 		self::rebuild_index();
 		return true;
+	}
+
+	/**
+	 * Genera il PDF del catalogo salvato e lo restituisce in base64.
+	 *
+	 * @return array<string, string>|WP_Error
+	 */
+	public static function pdf( string $code ) {
+		$data = self::find( $code );
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+
+		$code = (string) ( $data['testata']['codice'] ?? $code );
+		$name = (string) ( $data['testata']['nome'] ?? $code );
+		$lines = array( $name, 'Codice: ' . $code, '' );
+		$sections = is_array( $data['prodotti'] ?? null ) ? $data['prodotti'] : array();
+		if ( ! $sections ) {
+			$lines[] = 'Nessuna sezione.';
+		}
+		foreach ( $sections as $section ) {
+			if ( ! is_array( $section ) ) {
+				continue;
+			}
+			$lines[] = 'Sezione: ' . (string) ( $section['nome'] ?? '' );
+			$articoli = is_array( $section['articoli'] ?? null ) ? $section['articoli'] : array();
+			if ( ! $articoli ) {
+				$lines[] = '  (nessun articolo)';
+			}
+			foreach ( $articoli as $articolo ) {
+				if ( ! is_array( $articolo ) ) {
+					continue;
+				}
+				$sku    = (string) ( $articolo['sku'] ?? '' );
+				$anome  = (string) ( $articolo['nome'] ?? '' );
+				$layout = (string) ( $articolo['layout'] ?? '' );
+				$line   = '  ' . $sku . '  ' . $anome;
+				if ( '' !== $layout ) {
+					$line .= '  [' . $layout . ']';
+				}
+				$lines[] = $line;
+			}
+			$lines[] = '';
+		}
+
+		$binary = self::build_text_pdf( $lines );
+		$path   = self::pdf_file_path( $code );
+		if ( is_wp_error( $path ) ) {
+			return $path;
+		}
+		if ( false === file_put_contents( $path, $binary, LOCK_EX ) ) {
+			return self::error( 'catalog_pdf_failed', 'Impossibile generare il PDF del catalogo.', 500 );
+		}
+
+		return array(
+			'filename'      => basename( $path ),
+			'mimeType'      => 'application/pdf',
+			'contentBase64' => base64_encode( $binary ),
+		);
+	}
+
+	private static function pdf_file_path( string $code ) {
+		$code = self::valid_code( $code );
+		if ( is_wp_error( $code ) ) {
+			return $code;
+		}
+		$directory = self::directory();
+		if ( is_wp_error( $directory ) ) {
+			return $directory;
+		}
+		$pdf_dir = trailingslashit( dirname( $directory ) ) . 'cataloghi_pdf';
+		if ( ! is_dir( $pdf_dir ) && ! wp_mkdir_p( $pdf_dir ) ) {
+			return self::error( 'catalog_storage_unavailable', 'Impossibile creare la cartella dei PDF.', 500 );
+		}
+		self::protect_directory( $pdf_dir );
+		return trailingslashit( $pdf_dir ) . $code . '.pdf';
+	}
+
+	/** @param string[] $lines */
+	private static function build_text_pdf( array $lines ): string {
+		$pages = array();
+		$chunk = array();
+		foreach ( $lines as $line ) {
+			$chunk[] = self::pdf_text( $line );
+			if ( count( $chunk ) >= 42 ) {
+				$pages[] = $chunk;
+				$chunk   = array();
+			}
+		}
+		if ( $chunk || ! $pages ) {
+			$pages[] = $chunk;
+		}
+
+		$page_count = count( $pages );
+		$objects    = array();
+		$objects[]  = '';
+		$kids       = array();
+		for ( $i = 0; $i < $page_count; $i++ ) {
+			$kids[] = ( 3 + ( $i * 2 ) ) . ' 0 R';
+		}
+		$objects[0] = '<< /Type /Catalog /Pages 2 0 R >>';
+		$objects[]  = '<< /Type /Pages /Kids [' . implode( ' ', $kids ) . '] /Count ' . $page_count . ' >>';
+		$font_id    = 3 + ( $page_count * 2 );
+		foreach ( $pages as $index => $page_lines ) {
+			$commands = array( 'BT', '/F1 11 Tf', '50 800 Td', '14 TL' );
+			foreach ( $page_lines as $line_index => $text ) {
+				$operator = 0 === $line_index ? 'Tj' : '\'';
+				$commands[] = '(' . $text . ') ' . $operator;
+			}
+			$commands[] = 'ET';
+			$stream = implode( "\n", $commands );
+			$page_id = 3 + ( $index * 2 );
+			$content_id = $page_id + 1;
+			$objects[] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ' . $font_id . ' 0 R >> >> /Contents ' . $content_id . ' 0 R >>';
+			$objects[] = '<< /Length ' . strlen( $stream ) . " >>\nstream\n" . $stream . "\nendstream";
+		}
+		$objects[] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+
+		$pdf = "%PDF-1.4\n";
+		$offsets = array( 0 );
+		foreach ( $objects as $index => $object ) {
+			$offsets[] = strlen( $pdf );
+			$pdf .= ( $index + 1 ) . " 0 obj\n" . $object . "\nendobj\n";
+		}
+		$xref = strlen( $pdf );
+		$pdf .= "xref\n0 " . ( count( $objects ) + 1 ) . "\n0000000000 65535 f \n";
+		foreach ( array_slice( $offsets, 1 ) as $offset ) {
+			$pdf .= sprintf( "%010d 00000 n \n", $offset );
+		}
+		$pdf .= "trailer << /Size " . ( count( $objects ) + 1 ) . " /Root 1 0 R >>\nstartxref\n" . $xref . "\n%%EOF";
+		return $pdf;
+	}
+
+	private static function pdf_text( string $value ): string {
+		$value = function_exists( 'iconv' ) ? ( iconv( 'UTF-8', 'ASCII//TRANSLIT//IGNORE', $value ) ?: $value ) : $value;
+		$value = preg_replace( '/[^\x20-\x7E]/', '?', $value ) ?? $value;
+		return str_replace( array( '\\', '(', ')' ), array( '\\\\', '\\(', '\\)' ), $value );
 	}
 
 	private static function directory() {

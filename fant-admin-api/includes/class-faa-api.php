@@ -238,6 +238,7 @@ final class Fant_Admin_API_V4_REST {
 			)
 		);
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/contenuto', 'PUT', 'update_catalog_contenuto' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdf', 'POST', 'catalog_pdf' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/settings', 'PUT', 'update_catalog_settings' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::READABLE, 'catalog' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', 'PUT', 'update_catalog' );
@@ -728,6 +729,11 @@ final class Fant_Admin_API_V4_REST {
 
 	public static function cover_pdf( WP_REST_Request $request ) {
 		$result = Fant_Admin_API_V4_Covers::pdf( (string) $request['coverCode'] );
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function catalog_pdf( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Catalogs::pdf( (string) $request['catalogCode'] );
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
 

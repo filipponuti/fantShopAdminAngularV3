@@ -10,6 +10,8 @@ export interface CatalogArticolo {
   sku: string;
   nome: string;
   saltoPagina: boolean;
+  /** Codice layout in fant-layout-articoli, ad esempio articolo-semplice. */
+  layout?: string;
   variazioni?: CatalogArticolo[];
 }
 
@@ -40,6 +42,12 @@ export interface CatalogDetail {
   };
   settings?: CatalogSettings;
   prodotti: CatalogSezione[];
+}
+
+export interface CatalogPdf {
+  filename: string;
+  mimeType: string;
+  contentBase64: string;
 }
 
 export interface CatalogSummary {
@@ -95,5 +103,9 @@ export class CatalogService {
 
   delete(code: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${encodeURIComponent(code)}`);
+  }
+
+  generatePdf(code: string): Observable<CatalogPdf> {
+    return this.http.post<CatalogPdf>(`${this.apiUrl}/${encodeURIComponent(code)}/pdf`, {});
   }
 }

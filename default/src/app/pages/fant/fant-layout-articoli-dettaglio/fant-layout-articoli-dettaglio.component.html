@@ -46,6 +46,31 @@
           <div>{{ detail.layout.bancali ? 'Sì' : 'No' }}</div>
         </div>
         <div class="col-md-6">
+          <label class="text-muted small" for="layout-min-height">Altezza minima riga (px)</label>
+          <div class="d-flex gap-2 align-items-center">
+            <input
+              id="layout-min-height"
+              type="number"
+              class="form-control"
+              min="0"
+              max="2000"
+              step="1"
+              [value]="minRowHeight"
+              (input)="minRowHeight = $any($event.target).valueAsNumber">
+            <button
+              type="button"
+              class="btn btn-success text-nowrap"
+              [disabled]="savingHeight"
+              (click)="saveMinRowHeight()">
+              @if (savingHeight) {
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+              } @else {
+                Salva
+              }
+            </button>
+          </div>
+        </div>
+        <div class="col-md-6">
           <div class="text-muted small">Etichetta confezione</div>
           <div>{{ detail.layout.labels?.confezione || '—' }}</div>
         </div>

@@ -119,13 +119,72 @@
         </div>
       }
 
+      @if (activeView === 'anteprima') {
+        <div class="view-panel card">
+          <div class="card-header d-flex align-items-center justify-content-between gap-2">
+            <h5 class="card-title mb-0">ANTEPRIMA</h5>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [disabled]="previewLoading"
+              (click)="generaAnteprima()">
+              @if (previewLoading && anteprimaRichiesta) {
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+              }
+              Genera
+            </button>
+          </div>
+          <div class="card-body view-panel-body">
+            <p class="text-muted mb-2">
+              Ogni articolo usa il layout abbinato.
+              I fogli separati sono le pagine del PDF: «Salto pagina» è un salto richiesto,
+              «Pagina successiva» è il foglio pieno.
+            </p>
+            @if (showUnsavedPdfNote) {
+              <p class="text-warning mb-2">Ci sono modifiche non salvate: l’anteprima le include.</p>
+            }
+            @if (anteprimaRichiesta && previewPageCount) {
+              <p class="text-muted mb-3">{{ previewPageCount }} {{ previewPageCount === 1 ? 'pagina' : 'pagine' }}</p>
+            }
+            @if (anteprimaRichiesta && previewLoading) {
+              <p class="text-muted">Preparazione anteprima…</p>
+            }
+            @if (anteprimaRichiesta && previewUrl) {
+              <iframe class="pdf-preview-frame" sandbox [src]="previewUrl" title="Anteprima HTML del PDF"></iframe>
+            }
+          </div>
+          <div class="card-footer editor-footer">
+            <button type="button" class="btn btn-light" [disabled]="saving" (click)="cancel()">Annulla</button>
+            <button type="button" class="btn btn-success" [disabled]="saving" (click)="save()">Salva</button>
+          </div>
+        </div>
+      }
+
       @if (activeView === 'pdf') {
         <div class="view-panel card">
           <div class="card-header">
             <h5 class="card-title mb-0">PDF</h5>
           </div>
           <div class="card-body view-panel-body">
-            <!-- Contenuto PDF: da definire -->
+            <p class="text-muted mb-2">
+              Il PDF si apre dalla stessa anteprima HTML.
+              Genera apre la stampa di quel documento.
+            </p>
+            @if (showUnsavedPdfNote) {
+              <p class="text-warning mb-2">Ci sono modifiche non salvate: il PDF usa l’anteprima corrente.</p>
+            }
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="previewLoading || !previewReady"
+                (click)="generatePdf()">
+                Genera e apri PDF
+              </button>
+              @if (previewPageCount) {
+                <span class="text-muted">{{ previewPageCount }} {{ previewPageCount === 1 ? 'pagina' : 'pagine' }}</span>
+              }
+            </div>
           </div>
           <div class="card-footer editor-footer">
             <button type="button" class="btn btn-light" [disabled]="saving" (click)="cancel()">Annulla</button>
@@ -440,7 +499,19 @@
                                   <i class="ri-drag-move-2-line"></i>
                                 </button>
                                 <div class="article-heading">
-                                  <strong>{{ articolo.sku }}</strong>
+                                  <span class="article-sku-line">
+                                    <strong>{{ articolo.sku }}</strong>
+                                    @if (articleLayout(articolo); as layout) {
+                                      <span
+                                        class="article-layout"
+                                        [class.layout-articolo-semplice]="layout === 'articolo-semplice'">
+                                        ({{ layout }})
+                                      </span>
+                                      @if (articleHeight(articolo); as height) {
+                                        <span class="article-height">{{ height }} px</span>
+                                      }
+                                    }
+                                  </span>
                                   <span>{{ articolo.nome }}</span>
                                 </div>
                                 <div class="article-actions">

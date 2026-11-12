@@ -14,6 +14,7 @@ final class Fant_Admin_API_V4_Layouts {
 				'family'               => 'semplice',
 				'showVariationImages'  => false,
 				'bancali'              => false,
+				'minRowHeight'         => 220,
 			),
 			array(
 				'codice'               => 'articolo-variazioni-no-img',
@@ -21,6 +22,7 @@ final class Fant_Admin_API_V4_Layouts {
 				'family'               => 'variazioni',
 				'showVariationImages'  => false,
 				'bancali'              => false,
+				'minRowHeight'         => 0,
 			),
 			array(
 				'codice'               => 'articolo-variazioni-img',
@@ -28,6 +30,7 @@ final class Fant_Admin_API_V4_Layouts {
 				'family'               => 'variazioni',
 				'showVariationImages'  => true,
 				'bancali'              => false,
+				'minRowHeight'         => 0,
 			),
 			array(
 				'codice'               => 'nutrizione-sfuso',
@@ -35,6 +38,7 @@ final class Fant_Admin_API_V4_Layouts {
 				'family'               => 'nutrizione',
 				'showVariationImages'  => false,
 				'bancali'              => false,
+				'minRowHeight'         => 0,
 			),
 			array(
 				'codice'               => 'nutrizione-bancali',
@@ -42,6 +46,7 @@ final class Fant_Admin_API_V4_Layouts {
 				'family'               => 'nutrizione',
 				'showVariationImages'  => false,
 				'bancali'              => true,
+				'minRowHeight'         => 0,
 			),
 		);
 	}
@@ -127,6 +132,18 @@ final class Fant_Admin_API_V4_Layouts {
 			$layout['notes'] = sanitize_textarea_field( (string) $params['notes'] );
 		}
 
+		if ( array_key_exists( 'minRowHeight', $params ) ) {
+			$height = $params['minRowHeight'];
+			if ( ! is_numeric( $height ) ) {
+				return self::error( 'layout_invalid_height', 'L\'altezza minima della riga deve essere un numero di pixel tra 0 e 2000.', 422 );
+			}
+			$height = (int) $height;
+			if ( $height < 0 || $height > 2000 ) {
+				return self::error( 'layout_invalid_height', 'L\'altezza minima della riga deve essere un numero di pixel tra 0 e 2000.', 422 );
+			}
+			$layout['minRowHeight'] = $height;
+		}
+
 		$data['layout']              = $layout;
 		$data['testata']['updatedAt'] = gmdate( 'c' );
 
@@ -183,6 +200,7 @@ final class Fant_Admin_API_V4_Layouts {
 					),
 					'htmlPreview'         => null,
 					'notes'               => '',
+					'minRowHeight'        => (int) ( $definition['minRowHeight'] ?? 0 ),
 				),
 			);
 			$result = self::write( $path, $data );
@@ -203,6 +221,7 @@ final class Fant_Admin_API_V4_Layouts {
 			'family'              => (string) ( $layout['family'] ?? '' ),
 			'showVariationImages' => ! empty( $layout['showVariationImages'] ),
 			'bancali'             => ! empty( $layout['bancali'] ),
+			'minRowHeight'        => self::min_row_height( $data ),
 			'updatedAt'           => (string) ( $header['updatedAt'] ?? '' ),
 		);
 	}
@@ -261,6 +280,13 @@ final class Fant_Admin_API_V4_Layouts {
 		if ( ! is_array( $data ) ) {
 			return self::error( 'layout_invalid_json', 'File layout non valido.', 500 );
 		}
+		if ( ! isset( $data['layout'] ) || ! is_array( $data['layout'] ) ) {
+			$data['layout'] = array();
+		}
+		if ( ! isset( $data['layout']['minRowHeight'] ) ) {
+			$code = (string) ( $data['testata']['codice'] ?? '' );
+			$data['layout']['minRowHeight'] = self::height_default( $code );
+		}
 		return $data;
 	}
 
@@ -284,6 +310,23 @@ final class Fant_Admin_API_V4_Layouts {
 		@chmod( $path, 0640 );
 
 		return true;
+	}
+
+	private static function min_row_height( array $data ): int {
+		$layout = is_array( $data['layout'] ?? null ) ? $data['layout'] : array();
+		if ( isset( $layout['minRowHeight'] ) && is_numeric( $layout['minRowHeight'] ) ) {
+			return max( 0, (int) $layout['minRowHeight'] );
+		}
+		return self::height_default( (string) ( $data['testata']['codice'] ?? '' ) );
+	}
+
+	private static function height_default( string $code ): int {
+		foreach ( self::seed_definitions() as $definition ) {
+			if ( $definition['codice'] === $code ) {
+				return (int) $definition['minRowHeight'];
+			}
+		}
+		return 0;
 	}
 
 	private static function error( string $code, string $message, int $status ) {

@@ -46,6 +46,7 @@
               <th class="sortable" (click)="sortBy('codice')">Codice <i [class]="sortIcon('codice')"></i></th>
               <th class="sortable" (click)="sortBy('nome')">Nome <i [class]="sortIcon('nome')"></i></th>
               <th class="sortable" (click)="sortBy('family')">Famiglia <i [class]="sortIcon('family')"></i></th>
+              <th class="text-end">Altezza min.</th>
               <th class="sortable" (click)="sortBy('updatedAt')">Ultima modifica <i [class]="sortIcon('updatedAt')"></i></th>
               <th class="text-end">Azioni</th>
             </tr>
@@ -56,6 +57,7 @@
                 <td><span class="badge bg-primary-subtle text-primary layout-code">{{ layout.codice }}</span></td>
                 <td class="fw-medium">{{ layout.nome }}</td>
                 <td>{{ familyLabel(layout.family) }}</td>
+                <td class="text-end">{{ layout.minRowHeight > 0 ? layout.minRowHeight + ' px' : '—' }}</td>
                 <td>{{ layout.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td class="text-end">
                   <button
@@ -69,7 +71,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="5">
+                <td colspan="6">
                   <div class="empty-state text-center text-muted py-5">
                     <i class="ri-layout-grid-line display-5"></i>
                     <p class="mt-3 mb-1 fw-medium">Nessun layout trovato</p>

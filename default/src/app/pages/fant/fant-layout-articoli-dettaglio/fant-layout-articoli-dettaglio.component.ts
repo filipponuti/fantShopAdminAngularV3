@@ -18,6 +18,8 @@ export class FantLayoutArticoliDettaglioComponent implements OnInit {
   detail: LayoutDetail | null = null;
   loading = false;
   saving = false;
+  savingHeight = false;
+  minRowHeight = 0;
   error = '';
   success = '';
   activeTemplateTab: 'anteprima' | 'editor' = 'anteprima';
@@ -69,6 +71,7 @@ export class FantLayoutArticoliDettaglioComponent implements OnInit {
         ];
         const saved = (detail.layout.htmlPreview || '').trim();
         this.editorData = saved || defaultLayoutHtml(detail.testata.codice);
+        this.minRowHeight = Number(detail.layout.minRowHeight) || 0;
       },
       error: error => {
         this.error = error?.error?.message ?? 'Impossibile caricare il layout.';
@@ -87,6 +90,35 @@ export class FantLayoutArticoliDettaglioComponent implements OnInit {
       default:
         return family || '—';
     }
+  }
+
+  saveMinRowHeight(): void {
+    if (!this.codice) {
+      this.error = 'Codice layout non valido.';
+      return;
+    }
+    const height = Number(this.minRowHeight);
+    if (!Number.isInteger(height) || height < 0 || height > 2000) {
+      this.error = 'L\'altezza minima deve essere un numero intero di pixel tra 0 e 2000.';
+      this.success = '';
+      return;
+    }
+
+    this.savingHeight = true;
+    this.error = '';
+    this.success = '';
+    this.layouts.update(this.codice, { minRowHeight: height })
+      .pipe(finalize(() => this.savingHeight = false))
+      .subscribe({
+        next: detail => {
+          this.detail = detail;
+          this.minRowHeight = Number(detail.layout.minRowHeight) || 0;
+          this.success = 'Altezza minima salvata.';
+        },
+        error: error => {
+          this.error = error?.error?.message ?? 'Salvataggio altezza fallito.';
+        },
+      });
   }
 
   saveTemplate(): void {

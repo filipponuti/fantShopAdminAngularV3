@@ -134,7 +134,7 @@ describe('FantCataloghiArticoliComponent', () => {
       nome: 'Radice',
       saltoPagina: false,
       articoli: [
-        { productId: 1, sku: 'SKU-1', nome: 'Primo', saltoPagina: false, variazioni: [] },
+        { productId: 1, sku: 'SKU-1', nome: 'Primo', saltoPagina: false, layout: 'articolo-semplice', variazioni: [] },
       ],
     });
     expect(component.selectedSectionIndex).toBe(1);
@@ -272,7 +272,7 @@ describe('FantCataloghiArticoliComponent', () => {
 
     expect(component.sezioni[0].articoli).toEqual([
       { productId: 9, sku: 'sku-1', nome: 'Esistente', saltoPagina: false },
-      { productId: 2, sku: 'SKU-2', nome: 'Secondo', saltoPagina: false, variazioni: [] },
+      { productId: 2, sku: 'SKU-2', nome: 'Secondo', saltoPagina: false, layout: 'articolo-semplice', variazioni: [] },
     ]);
     expect(component.selectedProductIds.size).toBe(0);
     expect(component.error).toBe('');

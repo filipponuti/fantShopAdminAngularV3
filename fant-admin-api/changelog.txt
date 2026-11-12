@@ -1,0 +1,15 @@
+Changelog
+=========
+
+0.9.6 - 2026-11-11
+- Layout: altezza minima della riga in pixel
+- PDF catalogo: generazione del file e apertura
+
+0.9.5 - 2026-11-11
+- Ogni articolo può avere un layout (fant-layout-articoli); gli articoli semplici usano articolo-semplice
+
+0.9.4 - 2026-11-11
+- Aggiunta da categoria: solo prodotti visibili in catalogo (product_visibility senza exclude-from-catalog)
+
+0.9.3 - 2026-11-06
+- Inizio changelog. Versione corrente del plugin.
