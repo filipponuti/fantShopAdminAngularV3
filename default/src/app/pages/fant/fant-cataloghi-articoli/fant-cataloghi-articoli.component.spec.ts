@@ -108,10 +108,10 @@ describe('FantCataloghiArticoliComponent', () => {
     const router = jasmine.createSpyObj('Router', ['navigate']);
     const catalogs = jasmine.createSpyObj<CatalogService>('CatalogService', ['get']);
     const products = jasmine.createSpyObj<ProductService>('ProductService', ['byCategory']);
-    products.byCategory.and.returnValue(of([
-      { id: 1, sku: 'SKU-1', name: 'Primo', code: 'SKU-1' },
-      { id: 2, sku: '', name: 'Senza SKU', code: '' },
-    ]));
+    products.byCategory.and.callFake((id: number) => of(id === 30
+      ? [{ id: 1, sku: 'SKU-1', name: 'Primo', code: 'SKU-1' }]
+      : [],
+    ));
     const categoryService = jasmine.createSpyObj<WooCategoryService>('WooCategoryService', ['list']);
     const component = new FantCataloghiArticoliComponent(
       route as any,
@@ -122,22 +122,47 @@ describe('FantCataloghiArticoliComponent', () => {
       jasmine.createSpyObj('NgbModal', ['open']),
     );
     component.sezioni = [...catalog.prodotti];
-    component.flatCategories = categories;
+    component.flatCategories = [
+      ...categories,
+      {
+        id: 30,
+        name: 'Serie',
+        slug: 'serie',
+        description: '',
+        parent: 20,
+        display: '',
+        image: null,
+        count: 1,
+        menuOrder: 0,
+      },
+    ];
     component.selectedCategoryId = 10;
     component.success = 'Catalogo salvato.';
 
     component.addCategorySection();
 
-    expect(products.byCategory).toHaveBeenCalledOnceWith(10, true);
+    expect(products.byCategory).toHaveBeenCalledOnceWith(30, false);
     expect(component.sezioni[1]).toEqual({
       categoryId: 10,
       nome: 'Radice',
+      saltoPagina: false,
+      articoli: [],
+    });
+    expect(component.sezioni[2]).toEqual({
+      categoryId: 20,
+      nome: 'Radice->Figlia',
+      saltoPagina: false,
+      articoli: [],
+    });
+    expect(component.sezioni[3]).toEqual({
+      categoryId: 30,
+      nome: 'Radice->Figlia->Serie',
       saltoPagina: false,
       articoli: [
         { productId: 1, sku: 'SKU-1', nome: 'Primo', saltoPagina: false, layout: 'articolo-semplice', variazioni: [] },
       ],
     });
-    expect(component.selectedSectionIndex).toBe(1);
+    expect(component.selectedSectionIndex).toBe(3);
     expect(component.success).toBe('');
     expect(component.loadingProducts).toBeFalse();
   });
@@ -604,7 +629,7 @@ describe('FantCataloghiArticoliComponent', () => {
     const catalogService = catalogs
       ?? jasmine.createSpyObj<CatalogService>('CatalogService', ['get', 'updateContenuto', 'updateSettings']);
     const productService = products
-      ?? jasmine.createSpyObj<ProductService>('ProductService', ['search', 'byCategory']);
+      ?? jasmine.createSpyObj<ProductService>('ProductService', ['search', 'byCategory', 'byIds']);
     const categoryService = jasmine.createSpyObj<WooCategoryService>('WooCategoryService', ['list']);
     const modalService = modal ?? jasmine.createSpyObj('NgbModal', ['open']);
     return new FantCataloghiArticoliComponent(

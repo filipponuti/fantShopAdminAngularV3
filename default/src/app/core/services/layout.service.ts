@@ -32,15 +32,25 @@ export interface LayoutDetail {
       set?: string;
     };
     htmlPreview?: string | null;
+    headerHtml?: string | null;
     notes?: string;
     minRowHeight?: number;
+    exampleArticle?: {
+      sku: string;
+      name: string;
+    };
   };
 }
 
 export interface LayoutUpdatePayload {
   htmlPreview?: string | null;
+  headerHtml?: string | null;
   notes?: string;
   minRowHeight?: number;
+  exampleArticle?: {
+    sku: string;
+    name: string;
+  } | null;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { NgbNavModule, NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
-import { CKEditorModule } from '@ckeditor/ckeditor5-angular';
 
 import { SharedModule } from '../../shared/shared.module';
 import { FantRoutingModule } from './fant-routing.module';
@@ -36,7 +35,6 @@ import { FantLayoutArticoliDettaglioComponent } from './fant-layout-articoli-det
     DragDropModule,
     NgbNavModule,
     NgbPaginationModule,
-    CKEditorModule,
     SharedModule,
     FantRoutingModule
   ]

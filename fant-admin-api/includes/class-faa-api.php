@@ -238,6 +238,18 @@ final class Fant_Admin_API_V4_REST {
 			)
 		);
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/contenuto', 'PUT', 'update_catalog_contenuto' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/anteprime', WP_REST_Server::CREATABLE, 'create_catalog_anteprima' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/anteprime/(?P<anteprimaId>[a-zA-Z0-9_-]+)', 'PUT', 'update_catalog_anteprima' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/anteprime/(?P<anteprimaId>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_catalog_anteprima_record' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/anteprime/(?P<anteprimaId>[a-zA-Z0-9_-]+)/carica', 'POST', 'load_catalog_anteprima' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/anteprima', WP_REST_Server::READABLE, 'catalog_anteprima' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/anteprima', WP_REST_Server::CREATABLE, 'save_catalog_anteprima' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/anteprima', WP_REST_Server::DELETABLE, 'delete_catalog_anteprima' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdfs', WP_REST_Server::CREATABLE, 'create_catalog_pdf' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdfs/(?P<pdfId>[a-zA-Z0-9_-]+)', 'PUT', 'update_catalog_pdf' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdfs/(?P<pdfId>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_catalog_pdf_record' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdfs/(?P<pdfId>[a-zA-Z0-9_-]+)/carica', 'POST', 'load_catalog_pdf' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdf', WP_REST_Server::READABLE, 'catalog_pdf_file' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdf', 'POST', 'catalog_pdf' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/settings', 'PUT', 'update_catalog_settings' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)', WP_REST_Server::READABLE, 'catalog' );
@@ -732,6 +744,121 @@ final class Fant_Admin_API_V4_REST {
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
 
+	public static function create_catalog_anteprima( WP_REST_Request $request ) {
+		$params  = $request->get_json_params();
+		$params  = is_array( $params ) ? $params : array();
+		$sezioni = is_array( $params['sezioni'] ?? null ) ? $params['sezioni'] : array();
+		$result  = Fant_Admin_API_V4_Catalogs::create_anteprima_record(
+			(string) $request['catalogCode'],
+			(string) ( $params['nome'] ?? '' ),
+			$sezioni
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function update_catalog_anteprima( WP_REST_Request $request ) {
+		$params  = $request->get_json_params();
+		$params  = is_array( $params ) ? $params : array();
+		$sezioni = is_array( $params['sezioni'] ?? null ) ? $params['sezioni'] : array();
+		$result  = Fant_Admin_API_V4_Catalogs::update_anteprima_record(
+			(string) $request['catalogCode'],
+			(string) $request['anteprimaId'],
+			(string) ( $params['nome'] ?? '' ),
+			$sezioni
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function delete_catalog_anteprima_record( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Catalogs::delete_anteprima_record(
+			(string) $request['catalogCode'],
+			(string) $request['anteprimaId']
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function load_catalog_anteprima( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Catalogs::load_anteprima_record(
+			(string) $request['catalogCode'],
+			(string) $request['anteprimaId']
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function catalog_anteprima( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Catalogs::read_anteprima(
+			(string) $request['catalogCode'],
+			(string) $request->get_param( 'id' )
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function save_catalog_anteprima( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		$html   = $params['html'] ?? '';
+		$make_current = ! array_key_exists( 'makeCurrent', $params ) || false !== $params['makeCurrent'];
+		$result = Fant_Admin_API_V4_Catalogs::save_anteprima(
+			(string) $request['catalogCode'],
+			is_string( $html ) ? $html : '',
+			(string) ( $params['id'] ?? '' ),
+			$make_current
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function delete_catalog_anteprima( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Catalogs::delete_anteprima(
+			(string) $request['catalogCode'],
+			(string) $request->get_param( 'id' )
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function create_catalog_pdf( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		$result = Fant_Admin_API_V4_Catalogs::create_pdf_record(
+			(string) $request['catalogCode'],
+			(string) ( $params['nome'] ?? '' ),
+			(string) ( $params['anteprimaId'] ?? '' )
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function update_catalog_pdf( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		$result = Fant_Admin_API_V4_Catalogs::update_pdf_record(
+			(string) $request['catalogCode'],
+			(string) $request['pdfId'],
+			(string) ( $params['nome'] ?? '' ),
+			(string) ( $params['anteprimaId'] ?? '' )
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function delete_catalog_pdf_record( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Catalogs::delete_pdf_record(
+			(string) $request['catalogCode'],
+			(string) $request['pdfId']
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function load_catalog_pdf( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Catalogs::load_pdf_record(
+			(string) $request['catalogCode'],
+			(string) $request['pdfId']
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public static function catalog_pdf_file( WP_REST_Request $request ) {
+		$result = Fant_Admin_API_V4_Catalogs::read_pdf( (string) $request['catalogCode'] );
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
 	public static function catalog_pdf( WP_REST_Request $request ) {
 		$result = Fant_Admin_API_V4_Catalogs::pdf( (string) $request['catalogCode'] );
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
@@ -758,6 +885,11 @@ final class Fant_Admin_API_V4_REST {
 	}
 
 	public static function products( WP_REST_Request $request ) {
+		$ids_param = $request->get_param( 'ids' );
+		if ( is_string( $ids_param ) && trim( $ids_param ) !== '' ) {
+			$ids = array_map( 'intval', explode( ',', $ids_param ) );
+			return rest_ensure_response( Fant_Admin_API_V4_Products::by_ids( $ids ) );
+		}
 		$category_id = (int) $request->get_param( 'categoryId' );
 		if ( $category_id > 0 ) {
 			$include = ! in_array( strtolower( (string) $request->get_param( 'includeChildren' ) ), array( '0', 'false' ), true );

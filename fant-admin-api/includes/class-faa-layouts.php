@@ -128,6 +128,17 @@ final class Fant_Admin_API_V4_Layouts {
 			}
 		}
 
+		if ( array_key_exists( 'headerHtml', $params ) ) {
+			$header = $params['headerHtml'];
+			if ( null === $header ) {
+				$layout['headerHtml'] = null;
+			} elseif ( is_string( $header ) ) {
+				$layout['headerHtml'] = self::sanitize_layout_html( $header );
+			} else {
+				return self::error( 'layout_invalid_html', 'headerHtml deve essere una stringa HTML.', 422 );
+			}
+		}
+
 		if ( array_key_exists( 'notes', $params ) ) {
 			$layout['notes'] = sanitize_textarea_field( (string) $params['notes'] );
 		}
@@ -142,6 +153,28 @@ final class Fant_Admin_API_V4_Layouts {
 				return self::error( 'layout_invalid_height', 'L\'altezza minima della riga deve essere un numero di pixel tra 0 e 2000.', 422 );
 			}
 			$layout['minRowHeight'] = $height;
+		}
+
+		if ( array_key_exists( 'exampleArticle', $params ) ) {
+			$example = $params['exampleArticle'];
+			if ( null === $example ) {
+				$layout['exampleArticle'] = array(
+					'sku'  => '',
+					'name' => '',
+				);
+			} elseif ( ! is_array( $example ) ) {
+				return self::error( 'layout_invalid_example', 'L\'articolo di esempio non è valido.', 422 );
+			} else {
+				$sku  = sanitize_text_field( (string) ( $example['sku'] ?? '' ) );
+				$name = sanitize_text_field( (string) ( $example['name'] ?? '' ) );
+				if ( '' === $sku || strlen( $sku ) > 80 || strlen( $name ) > 300 ) {
+					return self::error( 'layout_invalid_example', 'Indica il codice di un articolo di esempio.', 422 );
+				}
+				$layout['exampleArticle'] = array(
+					'sku'  => $sku,
+					'name' => $name,
+				);
+			}
 		}
 
 		$data['layout']              = $layout;
@@ -199,8 +232,13 @@ final class Fant_Admin_API_V4_Layouts {
 						'set'        => 'Set da {n} pz.',
 					),
 					'htmlPreview'         => null,
+					'headerHtml'          => null,
 					'notes'               => '',
 					'minRowHeight'        => (int) ( $definition['minRowHeight'] ?? 0 ),
+					'exampleArticle'      => array(
+						'sku'  => '',
+						'name' => '',
+					),
 				),
 			);
 			$result = self::write( $path, $data );
@@ -286,6 +324,18 @@ final class Fant_Admin_API_V4_Layouts {
 		if ( ! isset( $data['layout']['minRowHeight'] ) ) {
 			$code = (string) ( $data['testata']['codice'] ?? '' );
 			$data['layout']['minRowHeight'] = self::height_default( $code );
+		}
+		$example = $data['layout']['exampleArticle'] ?? null;
+		if ( ! is_array( $example ) ) {
+			$data['layout']['exampleArticle'] = array(
+				'sku'  => '',
+				'name' => '',
+			);
+		} else {
+			$data['layout']['exampleArticle'] = array(
+				'sku'  => sanitize_text_field( (string) ( $example['sku'] ?? '' ) ),
+				'name' => sanitize_text_field( (string) ( $example['name'] ?? '' ) ),
+			);
 		}
 		return $data;
 	}

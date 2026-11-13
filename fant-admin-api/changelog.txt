@@ -1,6 +1,39 @@
 Changelog
 =========
 
+0.9.17 - 2026-11-13
+- Prodotti per categoria: senza figli non include le sottocategorie
+
+0.9.16 - 2026-11-13
+- Catalogo: più PDF, ognuno con un nome e un'anteprima da elaborare
+
+0.9.15 - 2026-11-13
+- Catalogo: più anteprime, ognuna con le proprie sezioni, il proprio HTML e il proprio PDF
+
+0.9.14 - 2026-11-13
+- PDF catalogo: percorso e file restano nel record del catalogo dopo il refresh
+
+0.9.13 - 2026-11-12
+- PDF catalogo: il file salvato espone il percorso per scaricarlo o aprirlo
+
+0.9.12 - 2026-11-12
+- Anteprima catalogo: il file HTML viene salvato, ricaricato e usato dal PDF
+
+0.9.11 - 2026-11-12
+- Prodotti: la scheda include l'URL della foto
+
+0.9.10 - 2026-11-12
+- Anteprima catalogo: foto, prezzo, misure esterne, colore e IVA letti dal prodotto
+
+0.9.9 - 2026-11-12
+- PDF catalogo: generazione lato server dall'HTML di anteprima
+
+0.9.8 - 2026-11-12
+- Layout: HTML dell'intestazione articolo (seconda riga del modello) salvato a parte dal corpo
+
+0.9.7 - 2026-11-12
+- Layout: articolo di esempio (codice e descrizione) salvato sul layout
+
 0.9.6 - 2026-11-11
 - Layout: altezza minima della riga in pixel
 - PDF catalogo: generazione del file e apertura

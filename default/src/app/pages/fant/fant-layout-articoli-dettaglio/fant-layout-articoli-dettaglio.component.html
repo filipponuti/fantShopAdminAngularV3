@@ -95,13 +95,62 @@
       <h5 class="card-title mb-0">Template layout</h5>
     </div>
     <div class="card-body">
-      <ul ngbNav #templateNav="ngbNav" [(activeId)]="activeTemplateTab" class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
-        <li [ngbNavItem]="'anteprima'" class="nav-item">
-          <a ngbNavLink class="nav-link" role="tab">Anteprima</a>
+      <section class="example-article" aria-labelledby="example-article-title">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+          <h6 id="example-article-title" class="mb-0">Articolo di esempio</h6>
+          <button
+            type="button"
+            class="btn btn-success btn-sm"
+            [disabled]="savingExample || !exampleDirty || !exampleDraftSku"
+            (click)="saveExample()">
+            @if (savingExample) {
+              <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+            }
+            Salva
+          </button>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <div class="text-muted small">Codice</div>
+            <div class="fw-medium">{{ exampleDraftSku || '—' }}</div>
+          </div>
+          <div class="col-md-8">
+            <div class="text-muted small">Descrizione</div>
+            <div>{{ exampleDraftName || '—' }}</div>
+          </div>
+        </div>
+        <label class="form-label" for="example-search">Cerca articolo</label>
+        <input
+          id="example-search"
+          type="search"
+          class="form-control"
+          placeholder="Codice o nome"
+          [value]="exampleSearch"
+          (input)="onExampleSearch($any($event.target).value)">
+        @if (searchingExample) {
+          <div class="text-muted small mt-2">Ricerca in corso...</div>
+        } @else if (exampleResults.length) {
+          <div class="list-group mt-2 example-results" aria-label="Risultati ricerca articolo di esempio">
+            @for (product of exampleResults; track product.id) {
+              <button
+                type="button"
+                class="list-group-item list-group-item-action text-start"
+                (click)="selectExample(product)">
+                <strong>{{ product.sku || product.code || 'Senza codice' }}</strong>
+                <span class="d-block text-muted">{{ product.name }}</span>
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <ul ngbNav #templateNav="ngbNav" [(activeId)]="activeTemplateTab" (navChange)="onTemplateTab($event)" class="nav nav-tabs nav-tabs-custom mb-3" role="tablist">
+        <li [ngbNavItem]="'modello'" class="nav-item">
+          <a ngbNavLink class="nav-link" role="tab">Modello</a>
           <ng-template ngbNavContent>
             @if (isArticoloSemplice) {
               <div class="layout-preview-wrap">
-                <article class="as-block" aria-label="Anteprima Articolo semplice">
+                <article class="as-block" aria-label="Modello Articolo semplice">
                   <header class="as-section-bar">FATTE A MANO &gt;&gt; Fontane</header>
 
                   <div class="as-col-headers" role="row">
@@ -115,7 +164,11 @@
 
                   <div class="as-product-row">
                     <div class="as-foto">
-                      <div class="as-foto-ph" aria-hidden="true"></div>
+                      @if (exampleImage) {
+                        <img class="as-foto-ph" [src]="exampleImage" [alt]="exampleDraftName || 'Foto prodotto'">
+                      } @else {
+                        <div class="as-foto-ph" aria-hidden="true"></div>
+                      }
                     </div>
                     <div class="as-codice">TF8100</div>
                     <div class="as-nome">FONTANA CON ROSONE</div>
@@ -146,7 +199,7 @@
                 </article>
               </div>
               <p class="text-muted small mt-3 mb-0">
-                Anteprima statica del layout <strong>Articolo semplice</strong>
+                Modello del layout <strong>Articolo semplice</strong>
                 (intestazione sezione + riga articolo + dettaglio misure/prezzo).
                 I colori della barra sezione saranno quelli impostati in Cataloghi → Settings → Sezione.
               </p>
@@ -160,15 +213,75 @@
           </ng-template>
         </li>
 
-        <li [ngbNavItem]="'editor'" class="nav-item">
-          <a ngbNavLink class="nav-link" role="tab">Ckeditor Classic Editor</a>
+        <li [ngbNavItem]="'intestazione'" class="nav-item">
+          <a ngbNavLink class="nav-link" role="tab">Intestazione</a>
           <ng-template ngbNavContent>
-            <p class="text-muted">Use <code>ckeditor-classic</code> class to set ckeditor classic editor.</p>
-            @if (activeTemplateTab === 'editor') {
-              <div class="ckeditor-classic layout-editor">
-                <ckeditor [editor]="Editor" [(ngModel)]="editorData" name="layoutTemplateEditor"></ckeditor>
-              </div>
+            <p class="text-muted small">
+              Seconda riga del Modello, dal tab Intest. HTML.
+            </p>
+            @if (headerPreviewUrl) {
+              <iframe class="layout-html-frame" sandbox [src]="headerPreviewUrl" title="Anteprima intestazione"></iframe>
             }
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="'intestazioneHtml'" class="nav-item">
+          <a ngbNavLink class="nav-link" role="tab">Intest. HTML</a>
+          <ng-template ngbNavContent>
+            <label class="form-label" for="layout-header-html">HTML dell’intestazione</label>
+            <textarea
+              id="layout-header-html"
+              class="form-control layout-html-source"
+              rows="12"
+              spellcheck="false"
+              [(ngModel)]="headerEditorData"
+              name="layoutHeaderEditor"></textarea>
+            <div class="d-flex flex-wrap gap-2 justify-content-end mt-3">
+              <button
+                type="button"
+                class="btn btn-light"
+                [disabled]="savingHeader"
+                (click)="restoreHeader()">
+                Ripristina
+              </button>
+              <button
+                type="button"
+                class="btn btn-success"
+                [disabled]="savingHeader"
+                (click)="saveHeader()">
+                @if (savingHeader) {
+                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                Salva
+              </button>
+            </div>
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="'anteprima'" class="nav-item">
+          <a ngbNavLink class="nav-link" role="tab">Anteprima</a>
+          <ng-template ngbNavContent>
+            <p class="text-muted small">
+              Render dell’HTML del tab Editor. I segnaposto sono compilati con un articolo di esempio.
+            </p>
+            @if (previewUrl) {
+              <iframe class="layout-html-frame" sandbox [src]="previewUrl" title="Anteprima HTML del layout"></iframe>
+            }
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="'editor'" class="nav-item">
+          <a ngbNavLink class="nav-link" role="tab">HTML</a>
+          <ng-template ngbNavContent>
+            <label class="form-label" for="layout-html">HTML dell’anteprima</label>
+            <textarea
+              id="layout-html"
+              class="form-control layout-html-source"
+              rows="24"
+              spellcheck="false"
+              [(ngModel)]="editorData"
+              name="layoutTemplateEditor"></textarea>
+            <p class="text-muted small mt-2 mb-0">Segnaposto: {{ placeholderHint }}</p>
             <div class="d-flex flex-wrap gap-2 justify-content-end mt-3">
               <button
                 type="button"

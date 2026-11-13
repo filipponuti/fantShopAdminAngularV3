@@ -121,36 +121,175 @@
 
       @if (activeView === 'anteprima') {
         <div class="view-panel card">
-          <div class="card-header d-flex align-items-center justify-content-between gap-2">
-            <h5 class="card-title mb-0">ANTEPRIMA</h5>
-            <button
-              type="button"
-              class="btn btn-primary btn-sm"
-              [disabled]="previewLoading"
-              (click)="generaAnteprima()">
-              @if (previewLoading && anteprimaRichiesta) {
-                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-              }
-              Genera
-            </button>
+          <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs anteprima-tabs">
+              <li class="nav-item">
+                <button
+                  type="button"
+                  class="nav-link"
+                  [class.active]="anteprimaTab === 'lista'"
+                  (click)="selectAnteprimaTab('lista')">
+                  ANTEPRIME
+                </button>
+              </li>
+              <li class="nav-item">
+                <button
+                  type="button"
+                  class="nav-link"
+                  [class.active]="anteprimaTab === 'corrente'"
+                  (click)="selectAnteprimaTab('corrente')">
+                  CORRENTE
+                </button>
+              </li>
+            </ul>
           </div>
           <div class="card-body view-panel-body">
-            <p class="text-muted mb-2">
-              Ogni articolo usa il layout abbinato.
-              I fogli separati sono le pagine del PDF: «Salto pagina» è un salto richiesto,
-              «Pagina successiva» è il foglio pieno.
-            </p>
-            @if (showUnsavedPdfNote) {
-              <p class="text-warning mb-2">Ci sono modifiche non salvate: l’anteprima le include.</p>
-            }
-            @if (anteprimaRichiesta && previewPageCount) {
-              <p class="text-muted mb-3">{{ previewPageCount }} {{ previewPageCount === 1 ? 'pagina' : 'pagine' }}</p>
-            }
-            @if (anteprimaRichiesta && previewLoading) {
-              <p class="text-muted">Preparazione anteprima…</p>
-            }
-            @if (anteprimaRichiesta && previewUrl) {
-              <iframe class="pdf-preview-frame" sandbox [src]="previewUrl" title="Anteprima HTML del PDF"></iframe>
+            @if (anteprimaTab === 'lista') {
+              @if (anteprimaFormOpen) {
+                <section class="anteprima-form">
+                  <h6 class="mb-3">{{ anteprimaFormId ? 'Modifica anteprima' : 'Nuova anteprima' }}</h6>
+                  <label class="form-label" for="anteprima-nome">Nome</label>
+                  <input
+                    id="anteprima-nome"
+                    class="form-control mb-3"
+                    maxlength="80"
+                    [value]="anteprimaFormNome"
+                    (input)="anteprimaFormNome = $any($event.target).value"
+                    placeholder="Nome univoco">
+                  <div class="form-label">Sezioni</div>
+                  @if (!sezioni.length) {
+                    <p class="text-muted">Non ci sono sezioni in «Sezioni e articoli».</p>
+                  } @else {
+                    <div class="anteprima-sezioni">
+                      @for (section of sezioni; track $index) {
+                        <label class="anteprima-sezione">
+                          <input
+                            type="checkbox"
+                            [checked]="anteprimaFormSezioni.has($index)"
+                            (change)="toggleAnteprimaSection($index)">
+                          <span>{{ section.nome }}</span>
+                        </label>
+                      }
+                    </div>
+                  }
+                  <div class="d-flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      class="btn btn-success btn-sm"
+                      [disabled]="savingAnteprimaRecord"
+                      (click)="salvaAnteprimaRecord()">
+                      @if (savingAnteprimaRecord) {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                      }
+                      Salva
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-light btn-sm"
+                      [disabled]="savingAnteprimaRecord"
+                      (click)="annullaAnteprimaForm()">
+                      Annulla
+                    </button>
+                  </div>
+                </section>
+              } @else {
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                  <p class="text-muted mb-0">Ogni anteprima elabora solo le sezioni scelte e ha il proprio file HTML.</p>
+                  <button type="button" class="btn btn-primary btn-sm" (click)="nuovaAnteprima()">Nuovo</button>
+                </div>
+                @if (!anteprime.length) {
+                  <p class="text-muted mb-0">Nessuna anteprima. Premi Nuovo per crearne una.</p>
+                } @else {
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle anteprima-table mb-0">
+                      <thead>
+                        <tr>
+                          <th>Nome</th>
+                          <th>Generato</th>
+                          <th>File HTML</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of anteprime; track item.id) {
+                          <tr [class.anteprima-row-current]="item.id === anteprimaCorrente">
+                            <td>{{ item.nome }}</td>
+                            <td>{{ item.generato ? 'Sì' : 'No' }}</td>
+                            <td><code>{{ item.fileHtml || '—' }}</code></td>
+                            <td class="text-end text-nowrap">
+                              <button
+                                type="button"
+                                class="btn btn-primary btn-sm me-1"
+                                [disabled]="!!loadingAnteprimaId || !!deletingAnteprimaId"
+                                (click)="caricaAnteprima(item)">
+                                @if (loadingAnteprimaId === item.id) {
+                                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                }
+                                Carica
+                              </button>
+                              <button
+                                type="button"
+                                class="btn btn-light btn-sm me-1"
+                                [disabled]="!!loadingAnteprimaId || !!deletingAnteprimaId"
+                                (click)="modificaAnteprima(item)">
+                                Modifica
+                              </button>
+                              <button
+                                type="button"
+                                class="btn btn-danger btn-sm"
+                                [disabled]="!!loadingAnteprimaId || !!deletingAnteprimaId"
+                                (click)="eliminaAnteprimaRecord(item)">
+                                @if (deletingAnteprimaId === item.id) {
+                                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                }
+                                Elimina
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              }
+            } @else {
+              <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                <div>
+                  @if (currentAnteprima(); as corrente) {
+                    <h6 class="mb-1">{{ corrente.nome }}</h6>
+                    <p class="text-muted mb-0">Genera scrive il file HTML delle sezioni selezionate.</p>
+                  } @else {
+                    <p class="text-muted mb-0">Nessuna anteprima caricata. Selezionane una in ANTEPRIME e premi Carica.</p>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  [disabled]="!anteprimaCorrente || previewLoading || savingAnteprima"
+                  (click)="generaAnteprima()">
+                  @if (savingAnteprima || (previewLoading && anteprimaRichiesta)) {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  }
+                  Genera
+                </button>
+              </div>
+              @if (anteprimaPath) {
+                <p class="mb-2">File: <code>{{ anteprimaPath }}</code></p>
+              }
+              @if (showUnsavedPdfNote) {
+                <p class="text-warning mb-2">Ci sono modifiche non salvate nel catalogo. Genera riscrive il file con i dati attuali.</p>
+              }
+              @if (anteprimaRichiesta && previewPageCount) {
+                <p class="text-muted mb-3">{{ previewPageCount }} {{ previewPageCount === 1 ? 'pagina' : 'pagine' }}</p>
+              }
+              @if (previewLoading) {
+                <p class="text-muted">Caricamento anteprima…</p>
+              } @else if (anteprimaCorrente && !anteprimaPath) {
+                <p class="text-muted">Questa anteprima non è ancora stata generata.</p>
+              }
+              @if (anteprimaRichiesta && previewUrl) {
+                <iframe class="pdf-preview-frame" sandbox [src]="previewUrl" title="Anteprima HTML del PDF"></iframe>
+              }
             }
           </div>
           <div class="card-footer editor-footer">
@@ -163,28 +302,173 @@
       @if (activeView === 'pdf') {
         <div class="view-panel card">
           <div class="card-header">
-            <h5 class="card-title mb-0">PDF</h5>
+            <ul class="nav nav-tabs card-header-tabs anteprima-tabs">
+              <li class="nav-item">
+                <button
+                  type="button"
+                  class="nav-link"
+                  [class.active]="pdfTab === 'lista'"
+                  (click)="selectPdfTab('lista')">
+                  LISTA PDF
+                </button>
+              </li>
+              <li class="nav-item">
+                <button
+                  type="button"
+                  class="nav-link"
+                  [class.active]="pdfTab === 'file'"
+                  (click)="selectPdfTab('file')">
+                  PDF
+                </button>
+              </li>
+            </ul>
           </div>
           <div class="card-body view-panel-body">
-            <p class="text-muted mb-2">
-              Il PDF si apre dalla stessa anteprima HTML.
-              Genera apre la stampa di quel documento.
-            </p>
-            @if (showUnsavedPdfNote) {
-              <p class="text-warning mb-2">Ci sono modifiche non salvate: il PDF usa l’anteprima corrente.</p>
-            }
-            <div class="d-flex flex-wrap align-items-center gap-2">
-              <button
-                type="button"
-                class="btn btn-primary"
-                [disabled]="previewLoading || !previewReady"
-                (click)="generatePdf()">
-                Genera e apri PDF
-              </button>
-              @if (previewPageCount) {
-                <span class="text-muted">{{ previewPageCount }} {{ previewPageCount === 1 ? 'pagina' : 'pagine' }}</span>
+            @if (pdfTab === 'lista') {
+              @if (pdfFormOpen) {
+                <section class="anteprima-form">
+                  <h6 class="mb-3">{{ pdfFormId ? 'Modifica PDF' : 'Nuovo PDF' }}</h6>
+                  <label class="form-label" for="pdf-nome">Nome</label>
+                  <input
+                    id="pdf-nome"
+                    class="form-control mb-3"
+                    maxlength="80"
+                    [value]="pdfFormNome"
+                    (input)="pdfFormNome = $any($event.target).value"
+                    placeholder="Nome univoco">
+                  <label class="form-label" for="pdf-anteprima">Anteprima</label>
+                  @if (!anteprime.length) {
+                    <p class="text-muted">Non ci sono anteprime. Creane una in ANTEPRIMA.</p>
+                  } @else {
+                    <select
+                      id="pdf-anteprima"
+                      class="form-select"
+                      [value]="pdfFormAnteprimaId"
+                      (change)="pdfFormAnteprimaId = $any($event.target).value">
+                      <option value="">Seleziona un'anteprima</option>
+                      @for (item of anteprime; track item.id) {
+                        <option [value]="item.id">{{ item.nome }}</option>
+                      }
+                    </select>
+                  }
+                  <div class="d-flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      class="btn btn-success btn-sm"
+                      [disabled]="savingPdfRecord"
+                      (click)="salvaPdfRecord()">
+                      @if (savingPdfRecord) {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                      }
+                      Salva
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-light btn-sm"
+                      [disabled]="savingPdfRecord"
+                      (click)="annullaPdfForm()">
+                      Annulla
+                    </button>
+                  </div>
+                </section>
+              } @else {
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                  <p class="text-muted mb-0">Ogni PDF ha un nome e usa una anteprima del catalogo.</p>
+                  <button type="button" class="btn btn-primary btn-sm" (click)="nuovoPdf()">Nuovo</button>
+                </div>
+                @if (!pdfs.length) {
+                  <p class="text-muted mb-0">Nessun PDF. Premi Nuovo per crearne uno.</p>
+                } @else {
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle anteprima-table mb-0">
+                      <thead>
+                        <tr>
+                          <th>Nome</th>
+                          <th>Anteprima</th>
+                          <th>Generato</th>
+                          <th>File PDF</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of pdfs; track item.id) {
+                          <tr [class.anteprima-row-current]="item.id === pdfCorrente">
+                            <td>{{ item.nome }}</td>
+                            <td>{{ anteprimaNome(item.anteprimaId) }}</td>
+                            <td>{{ item.generato ? 'Sì' : 'No' }}</td>
+                            <td><code>{{ item.filePdf || '—' }}</code></td>
+                            <td class="text-end text-nowrap">
+                              <button
+                                type="button"
+                                class="btn btn-primary btn-sm me-1"
+                                [disabled]="!!loadingPdfId || !!deletingPdfId"
+                                (click)="caricaPdf(item)">
+                                @if (loadingPdfId === item.id) {
+                                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                }
+                                Carica
+                              </button>
+                              <button
+                                type="button"
+                                class="btn btn-light btn-sm me-1"
+                                [disabled]="!!loadingPdfId || !!deletingPdfId"
+                                (click)="modificaPdf(item)">
+                                Modifica
+                              </button>
+                              <button
+                                type="button"
+                                class="btn btn-danger btn-sm"
+                                [disabled]="!!loadingPdfId || !!deletingPdfId"
+                                (click)="eliminaPdfRecord(item)">
+                                @if (deletingPdfId === item.id) {
+                                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                }
+                                Elimina
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
               }
-            </div>
+            } @else {
+              <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+                <div>
+                  @if (currentPdf(); as pdf) {
+                    <h6 class="mb-1">{{ pdf.nome }}</h6>
+                    <p class="text-muted mb-0">
+                      Usa l'anteprima «{{ anteprimaNome(pdf.anteprimaId) }}».
+                      Se il suo HTML non esiste, lo crea e poi elabora il PDF.
+                    </p>
+                  } @else {
+                    <p class="text-muted mb-0">Nessun PDF caricato. Selezionane uno in LISTA PDF e premi Carica.</p>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  [disabled]="!pdfCorrente || previewLoading || savingAnteprima || generatingPdf"
+                  (click)="generatePdf()">
+                  @if (generatingPdf) {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  }
+                  Genera
+                </button>
+              </div>
+              @if (pdfPath) {
+                <p class="mb-2">File: <code>{{ pdfPath }}</code></p>
+              } @else if (pdfCorrente && !generatingPdf) {
+                <p class="text-muted">Questo PDF non è ancora stato generato.</p>
+              }
+              @if (pdfPath) {
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <button type="button" class="btn btn-light" [disabled]="loadingPdf" (click)="downloadPdf()">Scarica</button>
+                  <button type="button" class="btn btn-light" [disabled]="loadingPdf" (click)="openPdf()">Apri</button>
+                </div>
+              }
+            }
           </div>
           <div class="card-footer editor-footer">
             <button type="button" class="btn btn-light" [disabled]="saving" (click)="cancel()">Annulla</button>
@@ -321,21 +605,24 @@
             <main class="editor-main card">
               <div class="card-header editor-main-header">
                 <h5 class="card-title mb-0">Sezioni e articoli</h5>
-                <div
-                  class="section-filter"
-                  [class.open]="sectionFilterOpen"
-                  (click)="$event.stopPropagation()">
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-soft-secondary section-filter-toggle"
-                    [attr.aria-expanded]="sectionFilterOpen"
-                    aria-haspopup="listbox"
-                    (click)="toggleSectionFilterPanel()">
-                    <i class="ri-filter-3-line me-1"></i>
-                    {{ sectionFilterLabel }}
-                    <i class="ri-arrow-down-s-line ms-1"></i>
-                  </button>
-                  @if (sectionFilterOpen) {
+                <div class="section-toolbar">
+                  <button type="button" class="btn btn-link btn-sm px-0" (click)="collapseAllSections()">Chiudi tutte</button>
+                  <button type="button" class="btn btn-link btn-sm px-0" (click)="expandAllSections()">Espandi tutte</button>
+                  <div
+                    class="section-filter"
+                    [class.open]="sectionFilterOpen"
+                    (click)="$event.stopPropagation()">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-soft-secondary section-filter-toggle"
+                      [attr.aria-expanded]="sectionFilterOpen"
+                      aria-haspopup="listbox"
+                      (click)="toggleSectionFilterPanel()">
+                      <i class="ri-filter-3-line me-1"></i>
+                      {{ sectionFilterLabel }}
+                      <i class="ri-arrow-down-s-line ms-1"></i>
+                    </button>
+                    @if (sectionFilterOpen) {
                     <div class="section-filter-panel" role="listbox" aria-label="Filtra sezioni visibili">
                       <div class="section-filter-actions">
                         <button type="button" class="btn btn-link btn-sm px-0" (click)="setSectionFilterAll()">Tutte</button>
@@ -359,7 +646,8 @@
                         <p class="text-muted mb-0 small">Nessuna sezione da filtrare.</p>
                       }
                     </div>
-                  }
+                    }
+                  </div>
                 </div>
               </div>
               <div class="card-body" (click)="closeSectionFilterPanel()">
@@ -507,8 +795,18 @@
                                         [class.layout-articolo-semplice]="layout === 'articolo-semplice'">
                                         ({{ layout }})
                                       </span>
-                                      @if (articleHeight(articolo); as height) {
-                                        <span class="article-height">{{ height }} px</span>
+                                      @if (articlePageFill(sectionIndex, articoloIndex); as fill) {
+                                        <span class="article-height">
+                                          {{ fill.height }} px ({{ fill.total }})
+                                          @if (fill.overflow) {
+                                            <span
+                                              class="page-overflow-dot"
+                                              role="img"
+                                              aria-label="Supera lo spazio della pagina: attiva Salto pagina"
+                                              title="Supera lo spazio della pagina: attiva Salto pagina">
+                                            </span>
+                                          }
+                                        </span>
                                       }
                                     }
                                   </span>

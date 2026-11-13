@@ -203,6 +203,12 @@
   gap: 0.75rem;
 }
 
+.section-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .section-filter {
   position: relative;
   flex: 0 0 auto;
@@ -399,6 +405,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+.page-overflow-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-left: 0.35rem;
+  border-radius: 50%;
+  background: #dc3545;
+  vertical-align: middle;
+}
+
 .pdf-preview-frame {
   display: block;
   width: 100%;
@@ -549,6 +565,37 @@
   background: transparent;
   border-top: 0;
   padding: 0;
+}
+
+.anteprima-tabs {
+  margin-bottom: -1px;
+}
+
+.anteprima-form {
+  max-width: 36rem;
+}
+
+.anteprima-sezioni {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 18rem;
+  overflow: auto;
+  padding: 0.75rem;
+  border: 1px solid var(--vz-border-color);
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.anteprima-sezione {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.anteprima-row-current {
+  background: rgba(var(--vz-primary-rgb, 64, 81, 137), 0.08);
 }
 
 .card-footer.editor-footer {

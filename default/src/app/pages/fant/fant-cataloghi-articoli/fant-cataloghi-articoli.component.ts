@@ -3,19 +3,26 @@ import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import {
+  CatalogAnteprima,
+  CatalogAnteprimaSezione,
+  CatalogAnteprimaState,
   CatalogArticolo,
+  CatalogPdf,
+  CatalogPdfRecord,
+  CatalogPdfState,
   CatalogSezioneSettings,
   CatalogService,
   CatalogSezione,
 } from '../../../core/services/catalog.service';
 import { LayoutService } from '../../../core/services/layout.service';
-import { defaultLayoutHtml } from '../fant-layout-articoli-dettaglio/layout-template-defaults';
+import { defaultLayoutHeaderHtml, defaultLayoutHtml } from '../fant-layout-articoli-dettaglio/layout-template-defaults';
 import {
   buildCatalogPdfDocument,
-  catalogPdfDocumentForPrint,
+  CATALOG_PAGE_CONTENT_PX,
   catalogPdfPageCount,
 } from './catalog-pdf-html';
 import { ProductItem, ProductService } from '../../../core/services/product.service';
@@ -29,6 +36,8 @@ interface CategoryNode extends WooCategory {
 }
 
 type CatalogEditorView = 'settings' | 'sezioni' | 'anteprima' | 'pdf';
+type AnteprimaTab = 'lista' | 'corrente';
+type PdfTab = 'lista' | 'file';
 
 interface MissingCandidate {
   productId: number;
@@ -67,6 +76,7 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
   success = '';
   private sezioniDirty = false;
   private settingsDirty = false;
+  private productSchede = new Map<number, ProductItem>();
   readonly fontSizeOptions = [10, 11, 12, 13, 14, 15, 16, 18, 20, 24];
   sezioneSettings: CatalogSezioneSettings = {
     backgroundColor: '#C6B2B3',
@@ -82,13 +92,43 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
   loadingCategories = false;
   loadingProducts = false;
   previewLoading = false;
+  generatingPdf = false;
+  loadingPdf = false;
+  pdfPath = '';
+  pdfFilename = '';
+  pdfObjectUrl: string | null = null;
   previewReady = false;
+  anteprimaTab: AnteprimaTab = 'lista';
+  anteprime: CatalogAnteprima[] = [];
+  anteprimaCorrente = '';
+  anteprimaFormOpen = false;
+  anteprimaFormId = '';
+  anteprimaFormNome = '';
+  anteprimaFormSezioni = new Set<number>();
+  savingAnteprimaRecord = false;
+  deletingAnteprimaId = '';
+  loadingAnteprimaId = '';
+  pdfTab: PdfTab = 'lista';
+  pdfs: CatalogPdfRecord[] = [];
+  pdfCorrente = '';
+  pdfFormOpen = false;
+  pdfFormId = '';
+  pdfFormNome = '';
+  pdfFormAnteprimaId = '';
+  savingPdfRecord = false;
+  deletingPdfId = '';
+  loadingPdfId = '';
   anteprimaRichiesta = false;
+  anteprimaPath = '';
+  savingAnteprima = false;
   previewPageCount = 0;
   previewUrl: SafeResourceUrl | null = null;
   private previewHtml = '';
   private previewObjectUrl: string | null = null;
   private previewTicket = 0;
+  private anteprimaTicket = 0;
+  private pdfMissingRetried = false;
+  private renderingAnteprimaId = '';
   private layoutHeights = new Map<string, number>([['articolo-semplice', 220]]);
   searchTerm = '';
   searchResults: ProductItem[] = [];
@@ -134,6 +174,7 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
       this.searchTimer = null;
     }
     this.revokePreviewUrl();
+    this.revokePdfUrl();
   }
 
   load(): void {
@@ -158,6 +199,16 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
         };
         this.sezioniDirty = false;
         this.settingsDirty = false;
+        this.applyAnteprimaState({
+          anteprime: catalog.anteprime ?? [],
+          anteprimaCorrente: catalog.anteprimaCorrente ?? '',
+        });
+        this.applyPdfState({
+          pdfs: catalog.pdfs ?? [],
+          pdfCorrente: catalog.pdfCorrente ?? '',
+        });
+        this.revokePdfUrl();
+        this.syncPdfFromCurrent();
       },
       error: error => {
         this.error = error?.error?.message ?? error?.message ?? 'Impossibile caricare il catalogo.';
@@ -212,30 +263,51 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
 
     this.loadingProducts = true;
     this.error = '';
-    this.products.byCategory(category.id, true)
+    this.sectionsForCategory(category, [])
       .pipe(finalize(() => this.loadingProducts = false))
       .subscribe({
-        next: items => {
-          const articoli: CatalogArticolo[] = items
-            .map(item => this.mapProductToArticolo(item))
-            .filter((item): item is CatalogArticolo => !!item);
-          this.sezioni = [
-            ...this.sezioni,
-            {
-              categoryId: category.id,
-              nome: category.name,
-              saltoPagina: false,
-              articoli,
-            },
-          ];
+        next: created => {
+          const start = this.sezioni.length;
+          this.sezioni = [...this.sezioni, ...created];
+          for (let index = start; index < this.sezioni.length; index++) {
+            this.includeSectionInFilter(index);
+          }
           this.selectedSectionIndex = this.sezioni.length - 1;
-          this.includeSectionInFilter(this.selectedSectionIndex);
           this.markDirty();
         },
         error: () => {
           this.error = 'Impossibile caricare i prodotti della categoria.';
         },
       });
+  }
+
+  private sectionsForCategory(category: WooCategory, ancestorNames: string[]): Observable<CatalogSezione[]> {
+    const children = this.directChildren(category.id);
+    const nome = ancestorNames.length ? `${ancestorNames.join('->')}->${category.name}` : category.name;
+    if (!children.length) {
+      return this.products.byCategory(category.id, false).pipe(
+        map(items => [this.catalogSection(category.id, nome, this.toArticoli(items))]),
+      );
+    }
+    return forkJoin(
+      children.map(child => this.sectionsForCategory(child, [...ancestorNames, category.name])),
+    ).pipe(map(branches => [this.catalogSection(category.id, nome, []), ...branches.flat()]));
+  }
+
+  private directChildren(categoryId: number): WooCategory[] {
+    return this.flatCategories
+      .filter(item => item.parent === categoryId)
+      .sort((left, right) => left.menuOrder - right.menuOrder || left.name.localeCompare(right.name, 'it'));
+  }
+
+  private catalogSection(categoryId: number, nome: string, articoli: CatalogArticolo[]): CatalogSezione {
+    return { categoryId, nome, saltoPagina: false, articoli };
+  }
+
+  private toArticoli(items: ProductItem[]): CatalogArticolo[] {
+    return items
+      .map(item => this.mapProductToArticolo(item))
+      .filter((item): item is CatalogArticolo => !!item);
   }
 
   addManualSection(): void {
@@ -734,6 +806,14 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     this.collapsedSectionIds = next;
   }
 
+  collapseAllSections(): void {
+    this.collapsedSectionIds = new Set(this.sezioni.map((_, index) => index));
+  }
+
+  expandAllSections(): void {
+    this.collapsedSectionIds = new Set();
+  }
+
   articleKey(sectionIndex: number, productId: number): string {
     return `${sectionIndex}-${productId}`;
   }
@@ -832,9 +912,312 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     this.activeView = view;
     this.error = '';
     this.success = '';
-    if (view === 'pdf') {
-      this.refreshPdfPreview();
+    if (view === 'anteprima') {
+      this.anteprimaTab = 'lista';
+      this.anteprimaFormOpen = false;
     }
+    if (view === 'pdf') {
+      this.pdfTab = 'lista';
+      this.pdfFormOpen = false;
+    }
+  }
+
+  selectAnteprimaTab(tab: AnteprimaTab): void {
+    this.anteprimaTab = tab;
+    this.error = '';
+    this.success = '';
+    if (tab === 'lista') {
+      return;
+    }
+    this.anteprimaFormOpen = false;
+    const corrente = this.currentAnteprima();
+    if (corrente?.generato && !this.previewUrl) {
+      this.loadSavedAnteprima();
+    }
+  }
+
+  currentAnteprima(): CatalogAnteprima | null {
+    return this.anteprime.find(item => item.id === this.anteprimaCorrente) ?? null;
+  }
+
+  nuovaAnteprima(): void {
+    this.anteprimaFormOpen = true;
+    this.anteprimaFormId = '';
+    this.anteprimaFormNome = '';
+    this.anteprimaFormSezioni = new Set();
+    this.error = '';
+    this.success = '';
+  }
+
+  modificaAnteprima(item: CatalogAnteprima): void {
+    this.anteprimaFormOpen = true;
+    this.anteprimaFormId = item.id;
+    this.anteprimaFormNome = item.nome;
+    this.anteprimaFormSezioni = new Set(
+      this.sezioni
+        .map((section, index) => this.sectionMatches(section.nome, index, item.sezioni) ? index : -1)
+        .filter(index => index >= 0),
+    );
+    this.error = '';
+    this.success = '';
+  }
+
+  annullaAnteprimaForm(): void {
+    this.anteprimaFormOpen = false;
+  }
+
+  toggleAnteprimaSection(index: number): void {
+    const next = new Set(this.anteprimaFormSezioni);
+    if (next.has(index)) {
+      next.delete(index);
+    } else {
+      next.add(index);
+    }
+    this.anteprimaFormSezioni = next;
+  }
+
+  salvaAnteprimaRecord(): void {
+    if (!this.codice || this.savingAnteprimaRecord) {
+      return;
+    }
+    const nome = this.anteprimaFormNome.trim();
+    if (!nome) {
+      this.error = 'Il nome dell\'anteprima è obbligatorio.';
+      return;
+    }
+    if (nome.length > 80) {
+      this.error = 'Il nome dell\'anteprima può avere al massimo 80 caratteri.';
+      return;
+    }
+    const taken = this.anteprime.some(item =>
+      item.id !== this.anteprimaFormId && item.nome.toLocaleLowerCase() === nome.toLocaleLowerCase(),
+    );
+    if (taken) {
+      this.error = 'Esiste già un\'anteprima con questo nome.';
+      return;
+    }
+    const sezioni = [...this.anteprimaFormSezioni]
+      .filter(index => index >= 0 && index < this.sezioni.length)
+      .sort((left, right) => left - right)
+      .map(index => ({ nome: this.sezioni[index].nome, posizione: index }));
+    if (!sezioni.length) {
+      this.error = 'Seleziona almeno una sezione.';
+      return;
+    }
+    this.savingAnteprimaRecord = true;
+    this.error = '';
+    this.success = '';
+    const request = this.anteprimaFormId
+      ? this.catalogs.updateAnteprima(this.codice, this.anteprimaFormId, nome, sezioni)
+      : this.catalogs.createAnteprima(this.codice, nome, sezioni);
+    request.pipe(finalize(() => this.savingAnteprimaRecord = false)).subscribe({
+      next: state => {
+        this.applyAnteprimaState(state);
+        this.anteprimaFormOpen = false;
+        this.success = this.anteprimaFormId ? 'Anteprima aggiornata.' : 'Anteprima creata.';
+      },
+      error: error => {
+        this.error = error?.error?.message ?? 'Impossibile salvare l\'anteprima.';
+      },
+    });
+  }
+
+  eliminaAnteprimaRecord(item: CatalogAnteprima): void {
+    if (!this.codice || this.deletingAnteprimaId) {
+      return;
+    }
+    const confirmed = window.confirm(`Eliminare l'anteprima «${item.nome}» e i suoi file?`);
+    if (!confirmed) {
+      return;
+    }
+    const wasCurrent = item.id === this.anteprimaCorrente;
+    this.deletingAnteprimaId = item.id;
+    this.error = '';
+    this.success = '';
+    this.catalogs.deleteAnteprimaRecord(this.codice, item.id)
+      .pipe(finalize(() => this.deletingAnteprimaId = ''))
+      .subscribe({
+        next: state => {
+          this.applyAnteprimaState(state);
+          if (wasCurrent) {
+            this.anteprimaTicket++;
+            this.clearAnteprima();
+            this.syncPdfFromCurrent();
+          }
+          if (this.anteprimaFormId === item.id) {
+            this.anteprimaFormOpen = false;
+          }
+          this.success = 'Anteprima eliminata.';
+        },
+        error: error => {
+          this.error = error?.error?.message ?? 'Impossibile eliminare l\'anteprima.';
+        },
+      });
+  }
+
+  caricaAnteprima(item: CatalogAnteprima): void {
+    if (!this.codice || this.loadingAnteprimaId) {
+      return;
+    }
+    this.loadingAnteprimaId = item.id;
+    this.error = '';
+    this.success = '';
+    this.catalogs.loadAnteprima(this.codice, item.id)
+      .pipe(finalize(() => this.loadingAnteprimaId = ''))
+      .subscribe({
+        next: state => {
+          this.applyAnteprimaState(state);
+          this.anteprimaFormOpen = false;
+          this.anteprimaTab = 'corrente';
+          this.anteprimaTicket++;
+          this.clearAnteprima();
+          this.syncPdfFromCurrent();
+          if (this.currentAnteprima()?.generato) {
+            this.loadSavedAnteprima();
+          }
+          this.success = `Anteprima «${item.nome}» caricata.`;
+        },
+        error: error => {
+          this.error = error?.error?.message ?? 'Impossibile caricare l\'anteprima.';
+        },
+      });
+  }
+
+  selectPdfTab(tab: PdfTab): void {
+    this.pdfTab = tab;
+    this.error = '';
+    this.success = '';
+    if (tab === 'lista') {
+      return;
+    }
+    this.pdfFormOpen = false;
+  }
+
+  currentPdf(): CatalogPdfRecord | null {
+    return this.pdfs.find(item => item.id === this.pdfCorrente) ?? null;
+  }
+
+  anteprimaNome(id: string): string {
+    return this.anteprime.find(item => item.id === id)?.nome || 'Anteprima mancante';
+  }
+
+  nuovoPdf(): void {
+    this.pdfFormOpen = true;
+    this.pdfFormId = '';
+    this.pdfFormNome = '';
+    this.pdfFormAnteprimaId = this.anteprimaCorrente || this.anteprime[0]?.id || '';
+    this.error = '';
+    this.success = '';
+  }
+
+  modificaPdf(item: CatalogPdfRecord): void {
+    this.pdfFormOpen = true;
+    this.pdfFormId = item.id;
+    this.pdfFormNome = item.nome;
+    this.pdfFormAnteprimaId = item.anteprimaId;
+    this.error = '';
+    this.success = '';
+  }
+
+  annullaPdfForm(): void {
+    this.pdfFormOpen = false;
+  }
+
+  salvaPdfRecord(): void {
+    if (!this.codice || this.savingPdfRecord) {
+      return;
+    }
+    const nome = this.pdfFormNome.trim();
+    if (!nome) {
+      this.error = 'Il nome del PDF è obbligatorio.';
+      return;
+    }
+    if (nome.length > 80) {
+      this.error = 'Il nome del PDF può avere al massimo 80 caratteri.';
+      return;
+    }
+    const taken = this.pdfs.some(item =>
+      item.id !== this.pdfFormId && item.nome.toLocaleLowerCase() === nome.toLocaleLowerCase(),
+    );
+    if (taken) {
+      this.error = 'Esiste già un PDF con questo nome.';
+      return;
+    }
+    if (!this.pdfFormAnteprimaId || !this.anteprime.some(item => item.id === this.pdfFormAnteprimaId)) {
+      this.error = 'Seleziona un\'anteprima del catalogo.';
+      return;
+    }
+    this.savingPdfRecord = true;
+    this.error = '';
+    this.success = '';
+    const editing = this.pdfFormId;
+    const request = editing
+      ? this.catalogs.updatePdf(this.codice, editing, nome, this.pdfFormAnteprimaId)
+      : this.catalogs.createPdf(this.codice, nome, this.pdfFormAnteprimaId);
+    request.pipe(finalize(() => this.savingPdfRecord = false)).subscribe({
+      next: state => {
+        this.applyPdfState(state);
+        this.pdfFormOpen = false;
+        this.success = editing ? 'PDF aggiornato.' : 'PDF creato.';
+      },
+      error: error => {
+        this.error = error?.error?.message ?? 'Impossibile salvare il PDF.';
+      },
+    });
+  }
+
+  eliminaPdfRecord(item: CatalogPdfRecord): void {
+    if (!this.codice || this.deletingPdfId) {
+      return;
+    }
+    const confirmed = window.confirm(`Eliminare il PDF «${item.nome}» e il suo file?`);
+    if (!confirmed) {
+      return;
+    }
+    const wasCurrent = item.id === this.pdfCorrente;
+    this.deletingPdfId = item.id;
+    this.error = '';
+    this.success = '';
+    this.catalogs.deletePdfRecord(this.codice, item.id)
+      .pipe(finalize(() => this.deletingPdfId = ''))
+      .subscribe({
+        next: state => {
+          this.applyPdfState(state);
+          if (wasCurrent) {
+            this.syncPdfFromCurrent();
+          }
+          if (this.pdfFormId === item.id) {
+            this.pdfFormOpen = false;
+          }
+          this.success = 'PDF eliminato.';
+        },
+        error: error => {
+          this.error = error?.error?.message ?? 'Impossibile eliminare il PDF.';
+        },
+      });
+  }
+
+  caricaPdf(item: CatalogPdfRecord): void {
+    if (!this.codice || this.loadingPdfId) {
+      return;
+    }
+    this.loadingPdfId = item.id;
+    this.error = '';
+    this.success = '';
+    this.catalogs.loadPdf(this.codice, item.id)
+      .pipe(finalize(() => this.loadingPdfId = ''))
+      .subscribe({
+        next: state => {
+          this.applyPdfState(state);
+          this.pdfFormOpen = false;
+          this.pdfTab = 'file';
+          this.syncPdfFromCurrent();
+          this.success = `PDF «${item.nome}» caricato.`;
+        },
+        error: error => {
+          this.error = error?.error?.message ?? 'Impossibile caricare il PDF.';
+        },
+      });
   }
 
   toggleMainSidebar(): void {
@@ -1019,71 +1402,347 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     return height && height > 0 ? height : null;
   }
 
+  articlePageFill(sectionIndex: number, articleIndex: number): { height: number; total: number; overflow: boolean } | null {
+    const target = this.sezioni[sectionIndex]?.articoli[articleIndex];
+    if (!target) {
+      return null;
+    }
+    const height = this.articleHeight(target);
+    if (height == null) {
+      return null;
+    }
+    let used = 0;
+    for (let sectionCursor = 0; sectionCursor < this.sezioni.length; sectionCursor++) {
+      const section = this.sezioni[sectionCursor];
+      if (section.saltoPagina && used > 0) {
+        used = 0;
+      }
+      for (let articleCursor = 0; articleCursor < section.articoli.length; articleCursor++) {
+        const rowHeight = this.articleHeight(section.articoli[articleCursor]) ?? 220;
+        if (section.articoli[articleCursor].saltoPagina && used > 0) {
+          used = 0;
+        }
+        used += rowHeight;
+        if (sectionCursor === sectionIndex && articleCursor === articleIndex) {
+          return { height, total: used, overflow: used > CATALOG_PAGE_CONTENT_PX };
+        }
+      }
+    }
+    return null;
+  }
+
   get showUnsavedPdfNote(): boolean {
     return this.sezioniDirty;
   }
 
   generaAnteprima(): void {
+    if (!this.codice) {
+      this.error = 'Codice catalogo non valido.';
+      return;
+    }
+    if (!this.anteprimaCorrente) {
+      this.error = 'Carica un\'anteprima prima di generarla.';
+      return;
+    }
+    if (!this.sezioniAnteprima().length) {
+      this.error = 'Nessuna sezione selezionata è ancora presente nel catalogo.';
+      return;
+    }
+    this.anteprimaTicket++;
     this.anteprimaRichiesta = true;
-    this.refreshPdfPreview();
+    this.error = '';
+    this.success = '';
+    this.refreshPdfPreview(html => this.persistAnteprima(html, true));
   }
 
   generatePdf(): void {
-    if (!this.previewReady || !this.previewHtml) {
-      this.error = 'Anteprima non pronta.';
-      this.success = '';
+    if (!this.codice) {
+      this.error = 'Codice catalogo non valido.';
       return;
     }
-
-    const opened = window.open('', '_blank');
-    if (!opened) {
-      this.error = 'Il browser ha bloccato l\'apertura del PDF.';
-      this.success = '';
+    const pdf = this.currentPdf();
+    if (!pdf) {
+      this.error = 'Carica un PDF prima di generarlo.';
       return;
     }
-
+    const anteprima = this.anteprime.find(item => item.id === pdf.anteprimaId);
+    if (!anteprima) {
+      this.error = 'L\'anteprima collegata a questo PDF non esiste più.';
+      return;
+    }
+    this.generatingPdf = true;
+    this.pdfMissingRetried = false;
+    this.renderingAnteprimaId = anteprima.id;
     this.error = '';
     this.success = '';
-    opened.document.open();
-    opened.document.write(catalogPdfDocumentForPrint(this.previewHtml));
-    opened.document.close();
+    if (anteprima.generato) {
+      this.requestPdf();
+      return;
+    }
+    if (!this.sezioniAnteprima().length) {
+      this.generatingPdf = false;
+      this.renderingAnteprimaId = '';
+      this.error = 'Nessuna sezione selezionata è ancora presente nel catalogo.';
+      return;
+    }
+    this.refreshPdfPreview(html => this.persistAnteprima(html, false, () => this.requestPdf(), false));
   }
 
-  private refreshPdfPreview(): void {
+  private requestPdf(): void {
+    if (!this.codice) {
+      this.generatingPdf = false;
+      return;
+    }
+    this.generatingPdf = true;
+    this.catalogs.generatePdf(this.codice).subscribe({
+      next: pdf => {
+        this.generatingPdf = false;
+        this.renderingAnteprimaId = '';
+        this.rememberPdf(pdf);
+        this.success = 'PDF salvato.';
+      },
+      error: error => {
+        if (error?.status === 404 && !this.pdfMissingRetried) {
+          this.pdfMissingRetried = true;
+          if (!this.sezioniAnteprima().length) {
+            this.generatingPdf = false;
+            this.renderingAnteprimaId = '';
+            this.error = 'Nessuna sezione selezionata è ancora presente nel catalogo.';
+            return;
+          }
+          this.refreshPdfPreview(html => this.persistAnteprima(html, false, () => this.requestPdf(), false));
+          return;
+        }
+        this.generatingPdf = false;
+        this.renderingAnteprimaId = '';
+        this.error = error?.error?.message ?? 'Impossibile generare il PDF.';
+      },
+    });
+  }
+
+  downloadPdf(): void {
+    this.withPdfFile(() => {
+      if (!this.pdfObjectUrl) {
+        return;
+      }
+      const link = document.createElement('a');
+      link.href = this.pdfObjectUrl;
+      link.download = this.pdfFilename || 'catalogo.pdf';
+      link.click();
+    });
+  }
+
+  openPdf(): void {
+    this.withPdfFile(() => {
+      if (!this.pdfObjectUrl) {
+        return;
+      }
+      const opened = window.open(this.pdfObjectUrl, '_blank', 'noopener');
+      if (!opened) {
+        this.error = 'Il browser ha bloccato l\'apertura del PDF.';
+      }
+    });
+  }
+
+  private withPdfFile(then: () => void): void {
+    if (this.pdfObjectUrl) {
+      then();
+      return;
+    }
+    if (!this.codice) {
+      return;
+    }
+    this.loadingPdf = true;
+    this.error = '';
+    this.catalogs.getPdf(this.codice)
+      .pipe(finalize(() => this.loadingPdf = false))
+      .subscribe({
+        next: pdf => {
+          this.rememberPdf(pdf);
+          then();
+        },
+        error: error => {
+          this.error = error?.error?.message ?? 'Impossibile leggere il PDF salvato.';
+        },
+      });
+  }
+
+  private rememberPdf(pdf: CatalogPdf): void {
+    this.revokePdfUrl();
+    this.pdfPath = pdf.path || '';
+    this.pdfFilename = pdf.filename || `${this.codice || 'catalogo'}.pdf`;
+    const corrente = this.currentPdf();
+    if (corrente) {
+      corrente.generato = true;
+      corrente.filePdf = this.pdfFilename;
+      corrente.pathPdf = this.pdfPath;
+    }
+    const bytes = Uint8Array.from(atob(pdf.contentBase64), char => char.charCodeAt(0));
+    this.pdfObjectUrl = URL.createObjectURL(new Blob([bytes], { type: pdf.mimeType || 'application/pdf' }));
+  }
+
+  private revokePdfUrl(): void {
+    if (this.pdfObjectUrl) {
+      URL.revokeObjectURL(this.pdfObjectUrl);
+      this.pdfObjectUrl = null;
+    }
+  }
+
+  private loadSavedAnteprima(): void {
+    if (!this.codice) {
+      return;
+    }
+    const ticket = ++this.anteprimaTicket;
+    this.previewLoading = true;
+    this.catalogs.getAnteprima(this.codice).subscribe({
+      next: saved => {
+        if (ticket !== this.anteprimaTicket) {
+          return;
+        }
+        this.showAnteprimaFile(saved);
+      },
+      error: error => {
+        if (ticket !== this.anteprimaTicket) {
+          return;
+        }
+        this.previewLoading = false;
+        this.clearAnteprima();
+        if (error?.status !== 404) {
+          this.error = error?.error?.message ?? 'Impossibile caricare l\'anteprima.';
+        }
+      },
+    });
+  }
+
+  private persistAnteprima(html: string, announce: boolean, then?: () => void, makeCurrent = true): void {
+    if (!this.codice) {
+      this.generatingPdf = false;
+      this.renderingAnteprimaId = '';
+      return;
+    }
+    const anteprimaId = this.renderingAnteprimaId || this.anteprimaCorrente;
+    this.savingAnteprima = true;
+    this.catalogs.saveAnteprima(this.codice, html, anteprimaId, makeCurrent)
+      .pipe(finalize(() => this.savingAnteprima = false))
+      .subscribe({
+        next: saved => {
+          this.anteprimaTicket++;
+          if (saved.anteprime) {
+            this.applyAnteprimaState({
+              anteprime: saved.anteprime,
+              anteprimaCorrente: saved.anteprimaCorrente || this.anteprimaCorrente,
+            });
+          }
+          if (makeCurrent) {
+            this.showAnteprimaFile(saved);
+          }
+          if (announce) {
+            this.success = 'Anteprima salvata.';
+          }
+          then?.();
+        },
+        error: error => {
+          this.generatingPdf = false;
+          this.renderingAnteprimaId = '';
+          this.error = error?.error?.message ?? 'Impossibile salvare il file di anteprima.';
+        },
+      });
+  }
+
+  private showAnteprimaFile(saved: { path: string; html: string }): void {
+    this.anteprimaPath = saved.path;
+    this.anteprimaRichiesta = true;
+    this.previewHtml = saved.html;
+    this.previewPageCount = catalogPdfPageCount(saved.html);
+    this.previewReady = saved.html.length > 0;
+    this.previewLoading = false;
+    if (!this.sanitizer) {
+      return;
+    }
+    this.revokePreviewUrl();
+    this.previewObjectUrl = URL.createObjectURL(new Blob([saved.html], { type: 'text/html;charset=utf-8' }));
+    this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.previewObjectUrl);
+  }
+
+  private clearAnteprima(): void {
+    this.anteprimaPath = '';
+    this.anteprimaRichiesta = false;
+    this.previewHtml = '';
+    this.previewPageCount = 0;
+    this.previewReady = false;
+    this.previewUrl = null;
+    this.revokePreviewUrl();
+  }
+
+  private refreshPdfPreview(afterPublish?: (html: string) => void): void {
     const ticket = ++this.previewTicket;
     const codes = this.usedLayoutCodes();
     const templates = new Map<string, string>();
+    const headers = new Map<string, string>();
     for (const code of codes) {
       templates.set(code, defaultLayoutHtml(code));
+      headers.set(code, code === 'articolo-semplice' ? defaultLayoutHeaderHtml(code) : '');
     }
-    if (!codes.length || !this.layouts) {
-      this.publishPreview(templates, ticket);
+    this.productSchede = new Map();
+
+    const ids = this.previewProductIds();
+    const loadLayouts = codes.length > 0 && !!this.layouts;
+    if (!loadLayouts && !ids.length) {
+      this.publishPreview(templates, headers, ticket, afterPublish);
       return;
     }
 
     this.previewLoading = true;
-    let pending = codes.length;
-    for (const code of codes) {
-      this.layouts.get(code).subscribe({
-        next: detail => {
-          const saved = (detail.layout.htmlPreview || '').trim();
-          templates.set(code, saved || defaultLayoutHtml(code));
-          if (--pending === 0) {
-            this.publishPreview(templates, ticket);
+    let pending = (loadLayouts ? codes.length : 0) + (ids.length ? 1 : 0);
+    const finish = (): void => {
+      if (--pending === 0) {
+        this.publishPreview(templates, headers, ticket, afterPublish);
+      }
+    };
+
+    if (loadLayouts && this.layouts) {
+      for (const code of codes) {
+        this.layouts.get(code).subscribe({
+          next: detail => {
+            const saved = (detail.layout.htmlPreview || '').trim();
+            templates.set(code, saved || defaultLayoutHtml(code));
+            const savedHeader = (detail.layout.headerHtml || '').trim();
+            headers.set(code, savedHeader || (code === 'articolo-semplice' ? defaultLayoutHeaderHtml(code) : ''));
+            finish();
+          },
+          error: () => finish(),
+        });
+      }
+    }
+
+    if (ids.length) {
+      this.products.byIds(ids).subscribe({
+        next: items => {
+          if (ticket === this.previewTicket) {
+            this.productSchede = new Map(items.map(item => [item.id, item]));
           }
+          finish();
         },
-        error: () => {
-          if (--pending === 0) {
-            this.publishPreview(templates, ticket);
-          }
-        },
+        error: () => finish(),
       });
     }
   }
 
+  private previewProductIds(): number[] {
+    const ids = new Set<number>();
+    for (const section of this.sezioniAnteprima()) {
+      for (const articolo of section.articoli) {
+        if (articolo.productId > 0) {
+          ids.add(articolo.productId);
+        }
+      }
+    }
+    return [...ids];
+  }
+
   private usedLayoutCodes(): string[] {
     const codes = new Set<string>();
-    for (const section of this.sezioni) {
+    for (const section of this.sezioniAnteprima()) {
       for (const articolo of section.articoli) {
         const layout = this.articleLayout(articolo);
         if (layout) {
@@ -1094,7 +1753,12 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     return [...codes];
   }
 
-  private publishPreview(layoutHtml: ReadonlyMap<string, string>, ticket: number): void {
+  private publishPreview(
+    layoutHtml: ReadonlyMap<string, string>,
+    layoutHeaderHtml: ReadonlyMap<string, string>,
+    ticket: number,
+    afterPublish?: (html: string) => void,
+  ): void {
     if (ticket !== this.previewTicket) {
       return;
     }
@@ -1102,29 +1766,82 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
       titolo: this.nome || this.codice || 'Catalogo',
       codice: this.codice,
       theme: { ...this.sezioneSettings },
-      sezioni: this.sezioni.map(section => ({
+      sezioni: this.sezioniAnteprima().map(section => ({
         nome: section.nome,
         saltoPagina: section.saltoPagina,
-        articoli: section.articoli.map(articolo => ({
-          sku: articolo.sku,
-          nome: articolo.nome,
-          saltoPagina: articolo.saltoPagina,
-          layout: this.articleLayout(articolo),
-          height: this.articleHeight(articolo) ?? 220,
-        })),
+        articoli: section.articoli.map(articolo => {
+          const scheda = this.productSchede.get(articolo.productId);
+          const prezzo = scheda?.price ?? '';
+          const iva = scheda?.iva ?? '';
+          return {
+            sku: articolo.sku,
+            nome: articolo.nome,
+            saltoPagina: articolo.saltoPagina,
+            layout: this.articleLayout(articolo),
+            height: this.articleHeight(articolo) ?? 220,
+            prezzo,
+            iva,
+            foto: scheda?.image ?? '',
+            varPrezzo: prezzo,
+            varMisure: scheda?.misure ?? '',
+            varColore: scheda?.colore ?? '',
+            varIva: iva,
+          };
+        }),
       })),
       layoutHtml,
+      layoutHeaderHtml,
     });
     this.previewHtml = html;
     this.previewPageCount = catalogPdfPageCount(html);
     this.previewReady = html.length > 0;
     this.previewLoading = false;
-    if (!this.sanitizer) {
-      return;
+    if (this.sanitizer) {
+      this.revokePreviewUrl();
+      this.previewObjectUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+      this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.previewObjectUrl);
     }
-    this.revokePreviewUrl();
-    this.previewObjectUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-    this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.previewObjectUrl);
+    afterPublish?.(html);
+  }
+
+  private sezioniAnteprima(): CatalogSezione[] {
+    const id = this.renderingAnteprimaId || this.anteprimaCorrente;
+    const corrente = this.anteprime.find(item => item.id === id) ?? null;
+    if (!corrente) {
+      return [];
+    }
+    return this.sezioni.filter((section, index) =>
+      this.sectionMatches(section.nome, index, corrente.sezioni),
+    );
+  }
+
+  private sectionMatches(nome: string, index: number, refs: CatalogAnteprimaSezione[]): boolean {
+    const sameName = this.sezioni.filter(section => section.nome === nome).length;
+    if (sameName <= 1) {
+      return refs.some(ref => ref.nome === nome);
+    }
+    return refs.some(ref => ref.nome === nome && ref.posizione === index);
+  }
+
+  private applyAnteprimaState(state: CatalogAnteprimaState): void {
+    this.anteprime = Array.isArray(state.anteprime) ? state.anteprime : [];
+    this.anteprimaCorrente = state.anteprimaCorrente || '';
+  }
+
+  private applyPdfState(state: CatalogPdfState): void {
+    this.pdfs = Array.isArray(state.pdfs) ? state.pdfs : [];
+    this.pdfCorrente = state.pdfCorrente || '';
+  }
+
+  private syncPdfFromCurrent(): void {
+    const corrente = this.currentPdf();
+    const path = corrente?.pathPdf || '';
+    const filename = corrente?.filePdf || '';
+    if (path !== this.pdfPath) {
+      this.revokePdfUrl();
+    }
+    this.pdfPath = path;
+    this.pdfFilename = filename;
   }
 
   private revokePreviewUrl(): void {
@@ -1148,9 +1865,6 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
           }
         }
         this.layoutHeights = heights;
-        if (this.activeView === 'pdf' || (this.activeView === 'anteprima' && this.anteprimaRichiesta)) {
-          this.refreshPdfPreview();
-        }
       },
     });
   }

@@ -170,10 +170,11 @@ final class Fant_Admin_API_V4_Products {
 				'tax_query' => array(
 					'relation' => 'AND',
 					array(
-						'taxonomy' => 'product_cat',
-						'field'    => 'term_id',
-						'terms'    => $term_ids,
-						'operator' => 'IN',
+						'taxonomy'         => 'product_cat',
+						'field'            => 'term_id',
+						'terms'            => $term_ids,
+						'operator'         => 'IN',
+						'include_children' => false,
 					),
 					array(
 						'taxonomy' => 'product_visibility',
@@ -228,11 +229,12 @@ final class Fant_Admin_API_V4_Products {
 			$code = $sku;
 		}
 		$mapped = array(
-			'id'   => (int) $product->get_id(),
-			'sku'  => $sku,
-			'name' => (string) $product->get_name(),
-			'code' => $code,
-			'type' => (string) $product->get_type(),
+			'id'    => (int) $product->get_id(),
+			'sku'   => $sku,
+			'name'  => (string) $product->get_name(),
+			'code'  => $code,
+			'type'  => (string) $product->get_type(),
+			'image' => self::image_url( $product ),
 		);
 
 		if ( $include_variations && $product instanceof WC_Product_Variable ) {
@@ -248,5 +250,103 @@ final class Fant_Admin_API_V4_Products {
 		}
 
 		return $mapped;
+	}
+
+	/**
+	 * Scheda catalogo (foto, prezzo, misure, colore, IVA) per gli id richiesti.
+	 *
+	 * @param int[] $ids
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function by_ids( array $ids ): array {
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $ids ) ) ) );
+		$ids = array_slice( $ids, 0, 500 );
+		$items = array();
+		foreach ( $ids as $id ) {
+			$product = wc_get_product( $id );
+			if ( ! $product instanceof WC_Product || ! self::is_allowed_status( $product ) ) {
+				continue;
+			}
+			$mapped            = self::map_product( $product, false );
+			$mapped['price']   = self::format_price( $product );
+			$mapped['misure']  = self::format_misure( $product );
+			$mapped['colore']  = self::format_colore( $product );
+			$mapped['iva']     = self::format_iva( $product );
+			$items[]           = $mapped;
+		}
+		return $items;
+	}
+
+	private static function image_url( WC_Product $product ): string {
+		$image_id = (int) $product->get_image_id();
+		if ( $image_id <= 0 ) {
+			return '';
+		}
+		$url = wp_get_attachment_image_url( $image_id, 'large' );
+		if ( ! is_string( $url ) || $url === '' ) {
+			$url = wp_get_attachment_url( $image_id );
+		}
+		return is_string( $url ) ? $url : '';
+	}
+
+	private static function format_price( WC_Product $product ): string {
+		$amount = $product->get_regular_price();
+		if ( $amount === '' || $amount === null ) {
+			return '';
+		}
+		$text = html_entity_decode( wp_strip_all_tags( (string) wc_price( $amount ) ), ENT_QUOTES, 'UTF-8' );
+		$text = preg_replace( '/\s+/u', ' ', trim( $text ) );
+		return is_string( $text ) ? $text : '';
+	}
+
+	private static function format_iva( WC_Product $product ): string {
+		$iva = trim( (string) $product->get_meta( 'ci_iva' ) );
+		if ( $iva === '' ) {
+			return '';
+		}
+		return str_ends_with( $iva, '%' ) ? $iva : $iva . '%';
+	}
+
+	private static function format_colore( WC_Product $product ): string {
+		$colore  = trim( (string) $product->get_attribute( 'Colore' ) );
+		$modello = $product->is_type( 'variation' ) ? trim( (string) $product->get_attribute( 'Modello' ) ) : '';
+		if ( $colore !== '' && $modello !== '' ) {
+			return $colore . ' ' . $modello;
+		}
+		return $colore !== '' ? $colore : $modello;
+	}
+
+	/** Stesso formato del catalogo storico: cm. larghezza x lunghezza - h. altezza. */
+	private static function format_misure( WC_Product $product ): string {
+		$width  = self::dimension( $product->get_width() );
+		$length = self::dimension( $product->get_length() );
+		$height = self::dimension( $product->get_height() );
+		$text   = '';
+		if ( $width !== '' ) {
+			$text = 'cm. ' . $width;
+		}
+		if ( $length !== '' ) {
+			$text .= ( $text === '' ? 'cm. ' : ' x ' ) . $length;
+		}
+		if ( $height !== '' ) {
+			$text .= ( $text === '' ? 'h. ' : ' - h. ' ) . $height;
+		}
+		if ( $text !== '' ) {
+			return $text;
+		}
+		$misura = trim( (string) $product->get_attribute( 'Misura' ) );
+		if ( $misura === '' ) {
+			return '';
+		}
+		return preg_match( '/^cm\./i', $misura ) ? $misura : 'cm. ' . $misura;
+	}
+
+	private static function dimension( $value ): string {
+		$raw = str_replace( ',', '.', trim( (string) $value ) );
+		if ( $raw === '' || ! is_numeric( $raw ) || (float) $raw == 0.0 ) {
+			return '';
+		}
+		$formatted = number_format( (float) $raw, 2, ',', '' );
+		return rtrim( rtrim( $formatted, '0' ), ',' );
 	}
 }

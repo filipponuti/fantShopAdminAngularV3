@@ -5,12 +5,22 @@ const PAGE_FOOTER_PX = 36;
 const PAGE_PADDING_TOP_PX = 28;
 const PAGE_CONTENT_PX = PAGE_HEIGHT_PX - PAGE_FOOTER_PX - PAGE_PADDING_TOP_PX;
 
+/** Spazio utile di una pagina, lo stesso usato dall'indicatore in Sezioni e articoli. */
+export const CATALOG_PAGE_CONTENT_PX = PAGE_CONTENT_PX;
+
 export interface CatalogPdfArticle {
   sku: string;
   nome: string;
   saltoPagina: boolean;
   layout: string;
   height: number;
+  prezzo?: string;
+  iva?: string;
+  foto?: string;
+  varPrezzo?: string;
+  varMisure?: string;
+  varColore?: string;
+  varIva?: string;
 }
 
 export interface CatalogPdfSection {
@@ -31,6 +41,7 @@ export interface CatalogPdfDocumentInput {
   theme: CatalogPdfTheme;
   sezioni: CatalogPdfSection[];
   layoutHtml: ReadonlyMap<string, string>;
+  layoutHeaderHtml?: ReadonlyMap<string, string>;
   /** Altezza usata se il layout non ne dichiara una. */
   fallbackHeight?: number;
 }
@@ -71,6 +82,41 @@ export function catalogPdfDocumentForPrint(html: string): string {
   return html.replace('</body>', `${script}</body>`);
 }
 
+/** Anteprima del template layout: lo stesso HTML dell'editor, con l'articolo di esempio. */
+export function buildLayoutHtmlPreview(
+  templateHtml: string,
+  example?: { sku: string; nome: string; foto?: string },
+): string {
+  const sku = example?.sku?.trim() || 'TF8100';
+  const nome = example?.nome?.trim() || 'FONTANA CON ROSONE';
+  const filled = fillTemplate(templateHtml, {
+    SEZIONE: 'FATTE A MANO >> Fontane',
+    SKU: sku,
+    NOME: nome,
+    FOTO: '',
+    VAR_SKU: example?.sku?.trim() ? sku : 'TATITF8100',
+    VAR_PREZZO: '€ 76,70',
+    VAR_MISURE: 'cm. 45 x 26 - h. 70',
+    VAR_COLORE: '',
+    VAR_IVA: '22%',
+  });
+  const body = applyProductPhoto(filled.replace(
+    /<img\b[^>]*src=(?:"\s*"|'\s*'|\s*)[^>]*>/gi,
+    '<span class="catalogo-foto-ph"></span>',
+  ), example?.foto ?? '');
+  const theme: CatalogPdfTheme = { backgroundColor: '#C6B2B3', textColor: '#333333', fontSize: 15 };
+  return `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <style>${documentCss(theme)}
+    body { background: #fff; padding: 16px; }
+  </style>
+</head>
+<body>${body}</body>
+</html>`;
+}
+
 interface PdfPage {
   breakLabel: string;
   html: string;
@@ -84,6 +130,8 @@ function paginate(input: CatalogPdfDocumentInput): PdfPage[] {
   let used = 0;
   let breakLabel = '';
   let sectionOnPage = false;
+  let headerOnPage = false;
+  const headerHeight = 36;
 
   const flush = (nextLabel: string): void => {
     if (!chunks.length) {
@@ -94,6 +142,7 @@ function paginate(input: CatalogPdfDocumentInput): PdfPage[] {
     used = 0;
     breakLabel = nextLabel;
     sectionOnPage = false;
+    headerOnPage = false;
   };
 
   const place = (html: string, height: number): void => {
@@ -105,9 +154,6 @@ function paginate(input: CatalogPdfDocumentInput): PdfPage[] {
   const placeSection = (section: CatalogPdfSection): void => {
     if (sectionOnPage) {
       return;
-    }
-    if (used > 0 && used + sectionHeight > PAGE_CONTENT_PX) {
-      flush('Pagina successiva');
     }
     place(sectionBar(section.nome, sectionHeight, input.theme), sectionHeight);
     sectionOnPage = true;
@@ -123,14 +169,15 @@ function paginate(input: CatalogPdfDocumentInput): PdfPage[] {
     }
     for (const articolo of section.articoli) {
       const height = articolo.height > 0 ? articolo.height : fallbackHeight;
+      const header = headerFor(input, articolo.layout);
       if (articolo.saltoPagina && used > 0) {
         flush('Salto pagina');
       }
-      const incoming = (sectionOnPage ? 0 : sectionHeight) + Math.min(height, PAGE_CONTENT_PX);
-      if (used > 0 && used + incoming > PAGE_CONTENT_PX) {
-        flush('Pagina successiva');
-      }
       placeSection(section);
+      if (!headerOnPage && header) {
+        place(header, headerHeight);
+        headerOnPage = true;
+      }
       const layout = input.layoutHtml.get(articolo.layout) || '<p>Template layout: da definire.</p>';
       place(articleBlock(layout, section.nome, articolo, height), height);
     }
@@ -143,24 +190,45 @@ function paginate(input: CatalogPdfDocumentInput): PdfPage[] {
   return pages;
 }
 
+function headerFor(input: CatalogPdfDocumentInput, layout: string): string {
+  const html = input.layoutHeaderHtml?.get(layout)?.trim() || '';
+  if (!html || html.includes('Intestazione: da definire')) {
+    return '';
+  }
+  return html;
+}
+
 function articleBlock(layoutHtml: string, sezione: string, articolo: CatalogPdfArticle, height: number): string {
   const filled = fillTemplate(layoutHtml, {
     SEZIONE: sezione,
     SKU: articolo.sku,
+    CODICE: articolo.sku,
     NOME: articolo.nome,
+    PREZZO: articolo.prezzo ?? '',
+    IVA: articolo.iva ?? '',
     FOTO: '',
     VAR_SKU: articolo.sku,
-    VAR_PREZZO: '',
-    VAR_MISURE: '',
-    VAR_COLORE: '',
-    VAR_IVA: '',
+    VAR_PREZZO: articolo.varPrezzo ?? '',
+    VAR_MISURE: articolo.varMisure ?? '',
+    VAR_COLORE: articolo.varColore ?? '',
+    VAR_IVA: articolo.varIva ?? '',
   });
   const body = filled.replace(/<div class="fantini-catalogo-sezione-titolo">[\s\S]*?<\/div>/gi, '');
   const withoutEmptyImage = body.replace(
     /<img\b[^>]*src=(?:"\s*"|'\s*'|\s*)[^>]*>/gi,
     '<span class="catalogo-foto-ph"></span>',
   );
-  return `<div class="catalogo-articolo" style="height:${Math.round(height)}px">${withoutEmptyImage}</div>`;
+  const withPhoto = applyProductPhoto(withoutEmptyImage, articolo.foto ?? '');
+  return `<div class="catalogo-articolo" style="height:${Math.round(height)}px">${withPhoto}</div>`;
+}
+
+function applyProductPhoto(html: string, foto: string): string {
+  const url = /^https?:\/\/[^\s"'<>]+$/i.test(foto.trim()) ? foto.trim() : '';
+  if (!url) {
+    return html;
+  }
+  const img = `<img class="art-semplice-foto-box" src="${escapeHtml(url)}" alt="">`;
+  return html.replace(/<span\b[^>]*class="[^"]*\bart-semplice-foto-box\b[^"]*"[^>]*>\s*<\/span>/gi, img);
 }
 
 function sectionBar(nome: string, height: number, theme: CatalogPdfTheme): string {
@@ -188,6 +256,79 @@ function escapeHtml(value: string): string {
 
 function cssColor(value: string, fallback: string): string {
   return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value.trim()) ? value.trim() : fallback;
+}
+
+function articoloSempliceCss(): string {
+  return `
+    .art-semplice {
+      max-width: 52rem;
+      border: 1px solid #b8b8b8;
+      background: #fff;
+      color: #1a1a1a;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 0.9375rem;
+    }
+    .art-semplice-riga {
+      display: grid;
+      grid-template-columns: 4.5rem 5.5rem minmax(10rem, 1.6fr) 4.5rem minmax(6rem, 1fr) 3rem;
+      gap: 0.35rem;
+      align-items: center;
+      padding: 0.35rem 0.5rem;
+      background: #f4f4f4;
+      min-height: 3.5rem;
+    }
+    .art-semplice-foto-box {
+      display: block;
+      width: 3.25rem;
+      height: 3.25rem;
+      border: 1px solid #bbb;
+      background: linear-gradient(145deg, #d9b08a 0%, #b9784a 55%, #8f5530 100%);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+    }
+    img.art-semplice-foto-box {
+      object-fit: contain;
+      background: #fff;
+      box-shadow: none;
+    }
+    .art-semplice-codice,
+    .art-semplice-nome { font-weight: 600; }
+    .art-semplice-nome { text-transform: uppercase; letter-spacing: 0.01em; }
+    .art-semplice-specchio { padding: 0.55rem 0.75rem 0.85rem 5.25rem; }
+    .art-semplice-specchio-titoli,
+    .art-semplice-specchio-riga {
+      display: grid;
+      grid-template-columns: 7rem 5rem minmax(10rem, 1.4fr) minmax(4rem, 1fr) 3rem;
+      gap: 0.5rem;
+      align-items: end;
+    }
+    .art-semplice-specchio-titoli {
+      font-weight: 600;
+      padding-bottom: 0.2rem;
+      border-bottom: 1px solid #333;
+      margin-bottom: 0.35rem;
+    }
+    .art-semplice-specchio-riga {
+      padding: 0.15rem 0 0.35rem;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    .art-semplice-specchio-vuota {
+      height: 1.15rem;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    .art-semplice-intestazione {
+      display: grid;
+      grid-template-columns: 4.5rem 5.5rem minmax(10rem, 1.6fr) 4.5rem minmax(6rem, 1fr) 3rem;
+      gap: 0.35rem;
+      align-items: center;
+      max-width: 52rem;
+      padding: 0.35rem 0.5rem;
+      background: #bec4e4;
+      color: #1a1a1a;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 0.9375rem;
+      font-weight: 700;
+    }
+  `;
 }
 
 function documentCss(theme: CatalogPdfTheme): string {
@@ -255,6 +396,7 @@ function documentCss(theme: CatalogPdfTheme): string {
     .fant-col-48 { flex: 0 0 48%; }
     .fant-col-0 { flex: 0 0 0; width: 0; padding: 0; }
     .catalogo-foto-ph, .wrap-img img { display: block; width: 64px; height: 64px; object-fit: contain; background: #f1f3f5; border: 1px solid #dee2e6; }
+    ${articoloSempliceCss()}
     @media print {
       body { background: #fff; }
       .catalogo-salto { display: none; }
