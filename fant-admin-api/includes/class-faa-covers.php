@@ -238,6 +238,23 @@ final class Fant_Admin_API_V4_Covers {
 		return is_wp_error( $result ) ? $result : self::normalize_cover( $data );
 	}
 
+	/**
+	 * Percorso assoluto del PDF già generato per la copertina.
+	 *
+	 * @return string|WP_Error
+	 */
+	public static function pdf_absolute_path( string $code ) {
+		$data = self::find( $code );
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+		$path = self::pdf_file_path( (string) ( $data['pdf']['nome'] ?? $code . '.pdf' ) );
+		if ( is_wp_error( $path ) || ! is_file( $path ) ) {
+			return is_wp_error( $path ) ? $path : self::error( 'cover_pdf_not_found', 'PDF della copertina non trovato.', 404 );
+		}
+		return $path;
+	}
+
 	public static function pdf( string $code ) {
 		$data = self::find( $code );
 		if ( is_wp_error( $data ) ) {

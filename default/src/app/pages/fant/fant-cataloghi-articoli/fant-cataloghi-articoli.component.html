@@ -111,6 +111,46 @@
                 FATTE A MANO &gt;&gt; Fontane
               </div>
             </section>
+            <section class="settings-frame mt-4" aria-labelledby="settings-files-title">
+              <h6 id="settings-files-title" class="settings-frame-title">Files aggiuntivi</h6>
+              @if (coversError) {
+                <p class="text-warning">{{ coversError }}</p>
+              }
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <label class="form-label" for="file-copertina">File Copertina</label>
+                  <select
+                    id="file-copertina"
+                    class="form-select"
+                    [value]="fileCopertina"
+                    (change)="onFileCopertinaChange($event)">
+                    <option value="">(nessuno)</option>
+                    @for (cover of covers; track cover.codice) {
+                      <option [value]="cover.codice">{{ cover.nome }}</option>
+                    }
+                    @if (coverOptionMissing(fileCopertina)) {
+                      <option [value]="fileCopertina">{{ fileCopertina }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label" for="file-retro">File Retro</label>
+                  <select
+                    id="file-retro"
+                    class="form-select"
+                    [value]="fileRetro"
+                    (change)="onFileRetroChange($event)">
+                    <option value="">(nessuno)</option>
+                    @for (cover of covers; track cover.codice) {
+                      <option [value]="cover.codice">{{ cover.nome }}</option>
+                    }
+                    @if (coverOptionMissing(fileRetro)) {
+                      <option [value]="fileRetro">{{ fileRetro }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </section>
           </div>
           <div class="card-footer editor-footer">
             <button type="button" class="btn btn-light" [disabled]="saving" (click)="cancel()">Annulla</button>
@@ -434,6 +474,38 @@
                 }
               }
             } @else {
+              @if (currentPdf(); as pdf) {
+                <div class="d-flex flex-wrap gap-4 mb-3">
+                  <div class="form-check form-switch mb-0">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="pdf-usa-copertina"
+                      [checked]="pdf.usaCopertina"
+                      [disabled]="generatingPdf"
+                      (change)="togglePdfUso('usaCopertina', $any($event.target).checked)">
+                    <label class="form-check-label" for="pdf-usa-copertina">Usa file Copertina</label>
+                  </div>
+                  <div class="form-check form-switch mb-0">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="pdf-usa-retro"
+                      [checked]="pdf.usaRetro"
+                      [disabled]="generatingPdf"
+                      (change)="togglePdfUso('usaRetro', $any($event.target).checked)">
+                    <label class="form-check-label" for="pdf-usa-retro">Usa file Retro</label>
+                  </div>
+                </div>
+                @if ((pdf.usaCopertina && !fileCopertina) || (pdf.usaRetro && !fileRetro)) {
+                  <p class="text-muted small">Se l'interruttore è acceso ma il file in Settings è (nessuno), quella parte non viene aggiunta.</p>
+                }
+                @if (hasUnsavedSettings && (pdf.usaCopertina || pdf.usaRetro)) {
+                  <p class="text-warning small">Salva Settings: la generazione usa i file già salvati.</p>
+                }
+              }
               <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
                 <div>
                   @if (currentPdf(); as pdf) {

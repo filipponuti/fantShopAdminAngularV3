@@ -28,8 +28,14 @@ export interface CatalogSezioneSettings {
   fontSize: number;
 }
 
+export interface CatalogFilesAggiuntivi {
+  copertina: string;
+  retro: string;
+}
+
 export interface CatalogSettings {
   sezione: CatalogSezioneSettings;
+  filesAggiuntivi?: CatalogFilesAggiuntivi;
 }
 
 export interface CatalogAnteprimaSezione {
@@ -60,6 +66,13 @@ export interface CatalogPdfRecord {
   generato: boolean;
   filePdf: string;
   pathPdf: string;
+  usaCopertina: boolean;
+  usaRetro: boolean;
+}
+
+export interface CatalogPdfUso {
+  usaCopertina: boolean;
+  usaRetro: boolean;
 }
 
 export interface CatalogPdfState {
@@ -217,6 +230,13 @@ export class CatalogService {
     );
   }
 
+  updatePdfUso(code: string, id: string, uso: CatalogPdfUso): Observable<CatalogPdfState> {
+    return this.http.put<CatalogPdfState>(
+      `${this.apiUrl}/${encodeURIComponent(code)}/pdfs/${encodeURIComponent(id)}/uso`,
+      uso,
+    );
+  }
+
   deletePdfRecord(code: string, id: string): Observable<CatalogPdfState> {
     return this.http.delete<CatalogPdfState>(
       `${this.apiUrl}/${encodeURIComponent(code)}/pdfs/${encodeURIComponent(id)}`,
@@ -238,7 +258,7 @@ export class CatalogService {
     return this.http.get<CatalogPdf>(`${this.apiUrl}/${encodeURIComponent(code)}/pdf`);
   }
 
-  generatePdf(code: string): Observable<CatalogPdf> {
-    return this.http.post<CatalogPdf>(`${this.apiUrl}/${encodeURIComponent(code)}/pdf`, {});
+  generatePdf(code: string, uso?: CatalogPdfUso): Observable<CatalogPdf> {
+    return this.http.post<CatalogPdf>(`${this.apiUrl}/${encodeURIComponent(code)}/pdf`, uso ?? {});
   }
 }

@@ -246,6 +246,7 @@ final class Fant_Admin_API_V4_REST {
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/anteprima', WP_REST_Server::CREATABLE, 'save_catalog_anteprima' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/anteprima', WP_REST_Server::DELETABLE, 'delete_catalog_anteprima' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdfs', WP_REST_Server::CREATABLE, 'create_catalog_pdf' );
+		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdfs/(?P<pdfId>[a-zA-Z0-9_-]+)/uso', 'PUT', 'update_catalog_pdf_uso' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdfs/(?P<pdfId>[a-zA-Z0-9_-]+)', 'PUT', 'update_catalog_pdf' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdfs/(?P<pdfId>[a-zA-Z0-9_-]+)', WP_REST_Server::DELETABLE, 'delete_catalog_pdf_record' );
 		self::route( '/catalogs/(?P<catalogCode>[a-zA-Z0-9_-]+)/pdfs/(?P<pdfId>[a-zA-Z0-9_-]+)/carica', 'POST', 'load_catalog_pdf' );
@@ -826,6 +827,18 @@ final class Fant_Admin_API_V4_REST {
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
 
+	public static function update_catalog_pdf_uso( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		$result = Fant_Admin_API_V4_Catalogs::update_pdf_uso(
+			(string) $request['catalogCode'],
+			(string) $request['pdfId'],
+			! empty( $params['usaCopertina'] ),
+			! empty( $params['usaRetro'] )
+		);
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
 	public static function update_catalog_pdf( WP_REST_Request $request ) {
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
@@ -860,7 +873,16 @@ final class Fant_Admin_API_V4_REST {
 	}
 
 	public static function catalog_pdf( WP_REST_Request $request ) {
-		$result = Fant_Admin_API_V4_Catalogs::pdf( (string) $request['catalogCode'] );
+		$params  = $request->get_json_params();
+		$params  = is_array( $params ) ? $params : array();
+		$options = array();
+		if ( array_key_exists( 'usaCopertina', $params ) ) {
+			$options['usaCopertina'] = ! empty( $params['usaCopertina'] );
+		}
+		if ( array_key_exists( 'usaRetro', $params ) ) {
+			$options['usaRetro'] = ! empty( $params['usaRetro'] );
+		}
+		$result = Fant_Admin_API_V4_Catalogs::pdf( (string) $request['catalogCode'], $options );
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
 

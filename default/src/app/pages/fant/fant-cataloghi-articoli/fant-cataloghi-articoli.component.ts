@@ -14,10 +14,12 @@ import {
   CatalogPdf,
   CatalogPdfRecord,
   CatalogPdfState,
+  CatalogPdfUso,
   CatalogSezioneSettings,
   CatalogService,
   CatalogSezione,
 } from '../../../core/services/catalog.service';
+import { CoverService, CoverSummary } from '../../../core/services/cover.service';
 import { LayoutService } from '../../../core/services/layout.service';
 import { defaultLayoutHeaderHtml, defaultLayoutHtml } from '../fant-layout-articoli-dettaglio/layout-template-defaults';
 import {
@@ -83,6 +85,10 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     textColor: '#333333',
     fontSize: 15,
   };
+  covers: CoverSummary[] = [];
+  coversError = '';
+  fileCopertina = '';
+  fileRetro = '';
   addTab: 'categoria' | 'sezione' | 'articolo' = 'categoria';
   newSectionName = '';
   flatCategories: WooCategory[] = [];
@@ -129,6 +135,7 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
   private anteprimaTicket = 0;
   private pdfMissingRetried = false;
   private renderingAnteprimaId = '';
+  private pdfUsoQueue: Promise<void> = Promise.resolve();
   private layoutHeights = new Map<string, number>([['articolo-semplice', 220]]);
   searchTerm = '';
   searchResults: ProductItem[] = [];
@@ -155,6 +162,7 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     private readonly modalService: NgbModal,
     private readonly layouts?: LayoutService,
     private readonly sanitizer?: DomSanitizer,
+    private readonly coversService?: CoverService,
   ) {}
 
   ngOnInit(): void {
@@ -166,6 +174,7 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     this.load();
     this.loadCategories();
     this.loadLayouts();
+    this.loadCovers();
   }
 
   ngOnDestroy(): void {
@@ -197,6 +206,8 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
           textColor: catalog.settings?.sezione?.textColor || '#333333',
           fontSize: catalog.settings?.sezione?.fontSize || 15,
         };
+        this.fileCopertina = catalog.settings?.filesAggiuntivi?.copertina || '';
+        this.fileRetro = catalog.settings?.filesAggiuntivi?.retro || '';
         this.sezioniDirty = false;
         this.settingsDirty = false;
         this.applyAnteprimaState({
@@ -1097,6 +1108,21 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     return this.pdfs.find(item => item.id === this.pdfCorrente) ?? null;
   }
 
+  togglePdfUso(kind: 'usaCopertina' | 'usaRetro', checked: boolean): void {
+    const pdf = this.currentPdf();
+    if (!pdf || !this.codice || this.generatingPdf) {
+      return;
+    }
+    const previous = pdf[kind];
+    pdf[kind] = checked;
+    const uso = this.pdfUsoOf(pdf);
+    this.enqueuePdfUso(pdf.id, uso, () => {
+      if (pdf[kind] === checked) {
+        pdf[kind] = previous;
+      }
+    });
+  }
+
   anteprimaNome(id: string): string {
     return this.anteprime.find(item => item.id === id)?.nome || 'Anteprima mancante';
   }
@@ -1249,7 +1275,13 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
       this.saving = true;
       this.error = '';
       this.success = '';
-      this.catalogs.updateSettings(this.codice, { sezione: { ...this.sezioneSettings } })
+      this.catalogs.updateSettings(this.codice, {
+        sezione: { ...this.sezioneSettings },
+        filesAggiuntivi: {
+          copertina: this.fileCopertina,
+          retro: this.fileRetro,
+        },
+      })
         .pipe(finalize(() => this.saving = false))
         .subscribe({
           next: () => {
@@ -1295,6 +1327,24 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     const value = Number((event.target as HTMLSelectElement).value);
     this.sezioneSettings = { ...this.sezioneSettings, fontSize: value };
     this.markSettingsDirty();
+  }
+
+  onFileCopertinaChange(event: Event): void {
+    this.fileCopertina = (event.target as HTMLSelectElement).value;
+    this.markSettingsDirty();
+  }
+
+  onFileRetroChange(event: Event): void {
+    this.fileRetro = (event.target as HTMLSelectElement).value;
+    this.markSettingsDirty();
+  }
+
+  get hasUnsavedSettings(): boolean {
+    return this.settingsDirty;
+  }
+
+  coverOptionMissing(code: string): boolean {
+    return !!code && !this.covers.some(item => item.codice === code);
   }
 
   private isCurrentViewDirty(): boolean {
@@ -1475,17 +1525,22 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
     this.renderingAnteprimaId = anteprima.id;
     this.error = '';
     this.success = '';
-    if (anteprima.generato) {
-      this.requestPdf();
-      return;
-    }
-    if (!this.sezioniAnteprima().length) {
-      this.generatingPdf = false;
-      this.renderingAnteprimaId = '';
-      this.error = 'Nessuna sezione selezionata è ancora presente nel catalogo.';
-      return;
-    }
-    this.refreshPdfPreview(html => this.persistAnteprima(html, false, () => this.requestPdf(), false));
+    void this.pdfUsoQueue.then(() => {
+      if (!this.generatingPdf) {
+        return;
+      }
+      if (anteprima.generato) {
+        this.requestPdf();
+        return;
+      }
+      if (!this.sezioniAnteprima().length) {
+        this.generatingPdf = false;
+        this.renderingAnteprimaId = '';
+        this.error = 'Nessuna sezione selezionata è ancora presente nel catalogo.';
+        return;
+      }
+      this.refreshPdfPreview(html => this.persistAnteprima(html, false, () => this.requestPdf(), false));
+    });
   }
 
   private requestPdf(): void {
@@ -1494,7 +1549,11 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
       return;
     }
     this.generatingPdf = true;
-    this.catalogs.generatePdf(this.codice).subscribe({
+    const pdf = this.currentPdf();
+    this.catalogs.generatePdf(this.codice, {
+      usaCopertina: !!pdf?.usaCopertina,
+      usaRetro: !!pdf?.usaRetro,
+    }).subscribe({
       next: pdf => {
         this.generatingPdf = false;
         this.renderingAnteprimaId = '';
@@ -1829,7 +1888,11 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
   }
 
   private applyPdfState(state: CatalogPdfState): void {
-    this.pdfs = Array.isArray(state.pdfs) ? state.pdfs : [];
+    this.pdfs = (Array.isArray(state.pdfs) ? state.pdfs : []).map(item => ({
+      ...item,
+      usaCopertina: !!item.usaCopertina,
+      usaRetro: !!item.usaRetro,
+    }));
     this.pdfCorrente = state.pdfCorrente || '';
   }
 
@@ -1849,6 +1912,45 @@ export class FantCataloghiArticoliComponent implements OnInit, OnDestroy {
       URL.revokeObjectURL(this.previewObjectUrl);
       this.previewObjectUrl = null;
     }
+  }
+
+  private loadCovers(): void {
+    if (!this.coversService) {
+      return;
+    }
+    this.coversService.list().subscribe({
+      next: items => {
+        this.covers = [...items].sort((left, right) => left.nome.localeCompare(right.nome, 'it'));
+        this.coversError = '';
+      },
+      error: () => {
+        this.coversError = 'Impossibile caricare le copertine.';
+      },
+    });
+  }
+
+  private pdfUsoOf(pdf: CatalogPdfRecord): CatalogPdfUso {
+    return {
+      usaCopertina: !!pdf.usaCopertina,
+      usaRetro: !!pdf.usaRetro,
+    };
+  }
+
+  private enqueuePdfUso(id: string, uso: CatalogPdfUso, revert: () => void): void {
+    this.pdfUsoQueue = this.pdfUsoQueue.then(() => new Promise<void>(resolve => {
+      if (!this.codice) {
+        resolve();
+        return;
+      }
+      this.catalogs.updatePdfUso(this.codice, id, uso).subscribe({
+        next: () => resolve(),
+        error: error => {
+          revert();
+          this.error = error?.error?.message ?? 'Impossibile salvare l\'impostazione del PDF.';
+          resolve();
+        },
+      });
+    }));
   }
 
   private loadLayouts(): void {

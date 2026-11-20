@@ -181,6 +181,10 @@ final class Fant_Admin_API_V4_Catalogs {
 				'textColor'       => '#333333',
 				'fontSize'        => 15,
 			),
+			'filesAggiuntivi' => array(
+				'copertina' => '',
+				'retro'     => '',
+			),
 		);
 	}
 
@@ -209,13 +213,41 @@ final class Fant_Admin_API_V4_Catalogs {
 			return self::error( 'catalog_settings_invalid', 'La dimensione testo deve essere tra 8 e 48.', 422 );
 		}
 
+		$files     = is_array( $settings['filesAggiuntivi'] ?? null ) ? $settings['filesAggiuntivi'] : array();
+		$copertina = self::valid_optional_cover_code( (string) ( $files['copertina'] ?? '' ) );
+		if ( is_wp_error( $copertina ) ) {
+			return $copertina;
+		}
+		$retro = self::valid_optional_cover_code( (string) ( $files['retro'] ?? '' ) );
+		if ( is_wp_error( $retro ) ) {
+			return $retro;
+		}
+
 		return array(
 			'sezione' => array(
 				'backgroundColor' => strtoupper( $background ),
 				'textColor'       => strtoupper( $text ),
 				'fontSize'        => $size,
 			),
+			'filesAggiuntivi' => array(
+				'copertina' => $copertina,
+				'retro'     => $retro,
+			),
 		);
+	}
+
+	/**
+	 * @return string|WP_Error
+	 */
+	private static function valid_optional_cover_code( string $code ) {
+		$code = strtolower( trim( $code ) );
+		if ( '' === $code ) {
+			return '';
+		}
+		if ( ! preg_match( '/^[a-z0-9][a-z0-9_-]{0,79}$/', $code ) ) {
+			return self::error( 'catalog_settings_invalid', 'Il file selezionato non è una copertina valida.', 422 );
+		}
+		return $code;
 	}
 
 	/**
@@ -483,8 +515,27 @@ final class Fant_Admin_API_V4_Catalogs {
 	}
 
 	/**
-	 * @return array<string, mixed>|WP_Error
+	 * @return array{pdfs: array<int, array<string, mixed>>, pdfCorrente: string}|WP_Error
 	 */
+	public static function update_pdf_uso( string $code, string $id, bool $usa_copertina, bool $usa_retro ) {
+		$loaded = self::catalog_for_write( $code );
+		if ( is_wp_error( $loaded ) ) {
+			return $loaded;
+		}
+		$data  = $loaded['data'];
+		$index = self::pdf_index( $data, $id );
+		if ( $index < 0 ) {
+			return self::error( 'catalog_pdf_missing', 'PDF non trovato.', 404 );
+		}
+		$data['pdfs'][ $index ]['usaCopertina'] = $usa_copertina;
+		$data['pdfs'][ $index ]['usaRetro']     = $usa_retro;
+		$written = self::write( $loaded['path'], $data );
+		if ( is_wp_error( $written ) ) {
+			return $written;
+		}
+		return self::pdf_state( $data );
+	}
+
 	public static function load_pdf_record( string $code, string $id ) {
 		$loaded = self::catalog_for_write( $code );
 		if ( is_wp_error( $loaded ) ) {
@@ -615,9 +666,10 @@ final class Fant_Admin_API_V4_Catalogs {
 	/**
 	 * Genera il PDF dal file HTML di anteprima e lo restituisce in base64.
 	 *
+	 * @param array<string, mixed> $options
 	 * @return array<string, string>|WP_Error
 	 */
-	public static function pdf( string $code ) {
+	public static function pdf( string $code, array $options = array() ) {
 		$data = self::find( $code );
 		if ( is_wp_error( $data ) ) {
 			return $data;
@@ -626,6 +678,14 @@ final class Fant_Admin_API_V4_Catalogs {
 		$record = self::pdf_by_id( $data, $pdf_id );
 		if ( ! is_array( $record ) ) {
 			return self::error( 'catalog_pdf_missing', 'Nessun PDF caricato.', 404 );
+		}
+		$usa_copertina = array_key_exists( 'usaCopertina', $options ) ? (bool) $options['usaCopertina'] : ! empty( $record['usaCopertina'] );
+		$usa_retro     = array_key_exists( 'usaRetro', $options ) ? (bool) $options['usaRetro'] : ! empty( $record['usaRetro'] );
+		if ( array_key_exists( 'usaCopertina', $options ) || array_key_exists( 'usaRetro', $options ) ) {
+			$saved = self::update_pdf_uso( $code, $pdf_id, $usa_copertina, $usa_retro );
+			if ( is_wp_error( $saved ) ) {
+				return $saved;
+			}
 		}
 		$id = (string) ( $record['anteprimaId'] ?? '' );
 		$saved = self::read_anteprima( $code, $id );
@@ -638,6 +698,10 @@ final class Fant_Admin_API_V4_Catalogs {
 		}
 
 		$binary = self::render_html_pdf( $html );
+		if ( is_wp_error( $binary ) ) {
+			return $binary;
+		}
+		$binary = self::with_extra_files( $data, $usa_copertina, $usa_retro, $binary );
 		if ( is_wp_error( $binary ) ) {
 			return $binary;
 		}
@@ -659,6 +723,59 @@ final class Fant_Admin_API_V4_Catalogs {
 		}
 
 		return self::pdf_payload( $path, $binary );
+	}
+
+	/**
+	 * Antepone il PDF di copertina e accoda il retro, se gli interruttori del PDF caricato sono accesi.
+	 *
+	 * @param array<string, mixed> $data
+	 * @return string|WP_Error
+	 */
+	private static function with_extra_files( array $data, bool $usa_copertina, bool $usa_retro, string $binary ) {
+		$files = is_array( $data['settings']['filesAggiuntivi'] ?? null ) ? $data['settings']['filesAggiuntivi'] : array();
+		$parts = array();
+		if ( $usa_copertina ) {
+			$cover = self::extra_pdf_binary( (string) ( $files['copertina'] ?? '' ), 'Il PDF della copertina selezionata non è disponibile.' );
+			if ( is_wp_error( $cover ) ) {
+				return $cover;
+			}
+			if ( is_string( $cover ) ) {
+				$parts[] = $cover;
+			}
+		}
+		$parts[] = $binary;
+		if ( $usa_retro ) {
+			$back = self::extra_pdf_binary( (string) ( $files['retro'] ?? '' ), 'Il PDF del retro selezionato non è disponibile.' );
+			if ( is_wp_error( $back ) ) {
+				return $back;
+			}
+			if ( is_string( $back ) ) {
+				$parts[] = $back;
+			}
+		}
+		if ( 1 === count( $parts ) ) {
+			return $binary;
+		}
+		return Fant_Admin_API_V4_Pdf_Merge::concat( $parts );
+	}
+
+	/**
+	 * @return string|null|WP_Error null se non c'è un file selezionato
+	 */
+	private static function extra_pdf_binary( string $cover_code, string $missing_message ) {
+		$cover_code = strtolower( trim( $cover_code ) );
+		if ( '' === $cover_code ) {
+			return null;
+		}
+		$path = Fant_Admin_API_V4_Covers::pdf_absolute_path( $cover_code );
+		if ( is_wp_error( $path ) ) {
+			return new WP_Error( 'catalog_extra_pdf_missing', $missing_message, array( 'status' => 404 ) );
+		}
+		$binary = file_get_contents( $path );
+		if ( ! is_string( $binary ) || '' === $binary ) {
+			return new WP_Error( 'catalog_extra_pdf_missing', $missing_message, array( 'status' => 404 ) );
+		}
+		return $binary;
 	}
 
 	/**
@@ -1240,12 +1357,14 @@ final class Fant_Admin_API_V4_Catalogs {
 			}
 			$seen[ mb_strtolower( $nome ) ] = true;
 			$data['pdfs'][] = array(
-				'id'          => '' !== $anteprima_id ? $anteprima_id : self::new_pdf_id( $data ),
-				'nome'        => $nome,
-				'anteprimaId' => $anteprima_id,
-				'generato'    => true,
-				'filePdf'     => (string) $item['filePdf'],
-				'pathPdf'     => (string) ( $item['pathPdf'] ?? '' ),
+				'id'            => '' !== $anteprima_id ? $anteprima_id : self::new_pdf_id( $data ),
+				'nome'          => $nome,
+				'anteprimaId'   => $anteprima_id,
+				'generato'      => true,
+				'filePdf'       => (string) $item['filePdf'],
+				'pathPdf'       => (string) ( $item['pathPdf'] ?? '' ),
+				'usaCopertina'  => false,
+				'usaRetro'      => false,
 			);
 		}
 		$current = (string) ( $data['anteprimaCorrente'] ?? '' );
@@ -1287,12 +1406,14 @@ final class Fant_Admin_API_V4_Catalogs {
 		}
 		if ( '' === $id ) {
 			$data['pdfs'][] = array(
-				'id'          => self::new_pdf_id( $data ),
-				'nome'        => $nome,
-				'anteprimaId' => $anteprima_id,
-				'generato'    => false,
-				'filePdf'     => '',
-				'pathPdf'     => '',
+				'id'           => self::new_pdf_id( $data ),
+				'nome'         => $nome,
+				'anteprimaId'  => $anteprima_id,
+				'generato'     => false,
+				'filePdf'      => '',
+				'pathPdf'      => '',
+				'usaCopertina' => false,
+				'usaRetro'     => false,
 			);
 		} else {
 			$index = self::pdf_index( $data, $id );
@@ -1360,12 +1481,14 @@ final class Fant_Admin_API_V4_Catalogs {
 				continue;
 			}
 			$items[] = array(
-				'id'          => $id,
-				'nome'        => (string) ( $item['nome'] ?? '' ),
-				'anteprimaId' => (string) ( $item['anteprimaId'] ?? '' ),
-				'generato'    => ! empty( $item['generato'] ),
-				'filePdf'     => (string) ( $item['filePdf'] ?? '' ),
-				'pathPdf'     => (string) ( $item['pathPdf'] ?? '' ),
+				'id'           => $id,
+				'nome'         => (string) ( $item['nome'] ?? '' ),
+				'anteprimaId'  => (string) ( $item['anteprimaId'] ?? '' ),
+				'generato'     => ! empty( $item['generato'] ),
+				'filePdf'      => (string) ( $item['filePdf'] ?? '' ),
+				'pathPdf'      => (string) ( $item['pathPdf'] ?? '' ),
+				'usaCopertina' => ! empty( $item['usaCopertina'] ),
+				'usaRetro'     => ! empty( $item['usaRetro'] ),
 			);
 		}
 		return $items;

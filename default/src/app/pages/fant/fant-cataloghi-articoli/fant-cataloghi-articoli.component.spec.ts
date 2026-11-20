@@ -550,6 +550,10 @@ describe('FantCataloghiArticoliComponent', () => {
         textColor: '#112233',
         fontSize: 16,
       },
+      filesAggiuntivi: {
+        copertina: '',
+        retro: '',
+      },
     });
     expect(component.success).toBe('Settings salvate.');
   });
